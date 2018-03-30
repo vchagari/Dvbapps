@@ -1877,37 +1877,6 @@ static int __tune_to_transponder (int frontend_fd, struct transponder *t)
 		dprintf(1, "\n");
 	}
 
-	if (t->type == FE_QPSK) {
-		if (lnb_type.high_val) {
-			if (lnb_type.switch_val) {
-				/* Voltage-controlled switch */
-				int hiband = 0;
-
-				if (p.frequency >= lnb_type.switch_val)
-					hiband = 1;
-
-				setup_switch (frontend_fd,
-					      switch_pos,
-					      t->polarisation == POLARISATION_VERTICAL ? 0 : 1,
-					      hiband);
-				usleep(50000);
-				if (hiband)
-					p.frequency = abs(p.frequency - lnb_type.high_val);
-				else
-					p.frequency = abs(p.frequency - lnb_type.low_val);
-			} else {
-				/* C-Band Multipoint LNBf */
-				p.frequency = abs(p.frequency - (t->polarisation == POLARISATION_VERTICAL ?
-						lnb_type.low_val: lnb_type.high_val));
-			}
-		} else	{
-			/* Monopoint LNBf without switch */
-			p.frequency = abs(p.frequency - lnb_type.low_val);
-		}
-		if (verbosity >= 2)
-			dprintf(1,"DVB-S IF freq is %d\n",p.frequency);
-	}
-
 	if (ioctl(frontend_fd, FE_SET_FRONTEND, &p) == -1) {
 		errorn("Setting frontend parameters failed");
 		return -1;
@@ -2042,16 +2011,6 @@ struct strtab {
 	const char *str;
 	int val;
 };
-static int str2enum(const char *str, const struct strtab *tab, int deflt)
-{
-	while (tab->str) {
-		if (!strcmp(tab->str, str))
-			return tab->val;
-		tab++;
-	}
-	error("invalid enum value '%s'\n", str);
-	return deflt;
-}
 
 static const char * enum2str(int v, const struct strtab *tab, const char *deflt)
 {
@@ -2062,90 +2021,6 @@ static const char * enum2str(int v, const struct strtab *tab, const char *deflt)
 	}
 	error("invalid enum value '%d'\n", v);
 	return deflt;
-}
-
-static enum fe_code_rate str2fec(const char *fec)
-{
-	struct strtab fectab[] = {
-		{ "NONE", FEC_NONE },
-		{ "1/2",  FEC_1_2 },
-		{ "2/3",  FEC_2_3 },
-		{ "3/4",  FEC_3_4 },
-		{ "4/5",  FEC_4_5 },
-		{ "5/6",  FEC_5_6 },
-		{ "6/7",  FEC_6_7 },
-		{ "7/8",  FEC_7_8 },
-		{ "8/9",  FEC_8_9 },
-		{ "AUTO", FEC_AUTO },
-		{ NULL, 0 }
-	};
-	return str2enum(fec, fectab, FEC_AUTO);
-}
-
-static enum fe_modulation str2qam(const char *qam)
-{
-	struct strtab qamtab[] = {
-		{ "QPSK",   QPSK },
-		{ "QAM16",  QAM_16 },
-		{ "QAM32",  QAM_32 },
-		{ "QAM64",  QAM_64 },
-		{ "QAM128", QAM_128 },
-		{ "QAM256", QAM_256 },
-		{ "AUTO",   QAM_AUTO },
-		{ "8VSB",   VSB_8 },
-		{ "16VSB",  VSB_16 },
-		{ NULL, 0 }
-	};
-	return str2enum(qam, qamtab, QAM_AUTO);
-}
-
-static enum fe_bandwidth str2bandwidth(const char *bw)
-{
-	struct strtab bwtab[] = {
-		{ "8MHz", BANDWIDTH_8_MHZ },
-		{ "7MHz", BANDWIDTH_7_MHZ },
-		{ "6MHz", BANDWIDTH_6_MHZ },
-		{ "AUTO", BANDWIDTH_AUTO },
-		{ NULL, 0 }
-	};
-	return str2enum(bw, bwtab, BANDWIDTH_AUTO);
-}
-
-static enum fe_transmit_mode str2mode(const char *mode)
-{
-	struct strtab modetab[] = {
-		{ "2k",   TRANSMISSION_MODE_2K },
-		{ "8k",   TRANSMISSION_MODE_8K },
-		{ "AUTO", TRANSMISSION_MODE_AUTO },
-		{ NULL, 0 }
-	};
-	return str2enum(mode, modetab, TRANSMISSION_MODE_AUTO);
-}
-
-static enum fe_guard_interval str2guard(const char *guard)
-{
-	struct strtab guardtab[] = {
-		{ "1/32", GUARD_INTERVAL_1_32 },
-		{ "1/16", GUARD_INTERVAL_1_16 },
-		{ "1/8",  GUARD_INTERVAL_1_8 },
-		{ "1/4",  GUARD_INTERVAL_1_4 },
-		{ "AUTO", GUARD_INTERVAL_AUTO },
-		{ NULL, 0 }
-	};
-	return str2enum(guard, guardtab, GUARD_INTERVAL_AUTO);
-}
-
-static enum fe_hierarchy str2hier(const char *hier)
-{
-	struct strtab hiertab[] = {
-		{ "NONE", HIERARCHY_NONE },
-		{ "1",    HIERARCHY_1 },
-		{ "2",    HIERARCHY_2 },
-		{ "4",    HIERARCHY_4 },
-		{ "AUTO", HIERARCHY_AUTO },
-		{ NULL, 0 }
-	};
-	return str2enum(hier, hiertab, HIERARCHY_AUTO);
 }
 
 static const char * fe_type2str(fe_type_t t)
@@ -2161,90 +2036,9 @@ static const char * fe_type2str(fe_type_t t)
 	return enum2str(t, typetab, "UNK");
 }
 
-static int tune_initial (int frontend_fd, __attribute__((unused)) const char *initial)
+static int tune_initial (int frontend_fd)
 {
-	//FILE *inif;
-//	unsigned int f, sr;
-	//char buf[200];
-	//char pol[20], fec[20], qam[20], bw[20], fec2[20], mode[20], guard[20], hier[20];
 	struct transponder *t;
-/*
-	inif = fopen(initial, "r");
-	if (!inif) {
-		error("cannot open '%s': %d %m\n", initial, errno);
-		return -1;
-	}
-	while (fgets(buf, sizeof(buf), inif)) {
-		if (buf[0] == '#' || buf[0] == '\n')
-			;
-		else if (sscanf(buf, "S %u %1[HVLR] %u %4s\n", &f, pol, &sr, fec) == 4) {
-			t = alloc_transponder(f);
-			t->type = FE_QPSK;
-			switch(pol[0]) {
-				case 'H':
-				case 'L':
-					t->polarisation = POLARISATION_HORIZONTAL;
-					break;
-				default:
-					t->polarisation = POLARISATION_VERTICAL;;
-					break;
-			}
-			t->param.inversion = spectral_inversion;
-			t->param.u.qpsk.symbol_rate = sr;
-			t->param.u.qpsk.fec_inner = str2fec(fec);
-			info("initial transponder %u %c %u %d\n",
-					t->param.frequency,
-					pol[0], sr,
-					t->param.u.qpsk.fec_inner);
-		}
-		else if (sscanf(buf, "C %u %u %4s %6s\n", &f, &sr, fec, qam) == 4) {
-			t = alloc_transponder(f);
-			t->type = FE_QAM;
-			t->param.inversion = spectral_inversion;
-			t->param.u.qam.symbol_rate = sr;
-			t->param.u.qam.fec_inner = str2fec(fec);
-			t->param.u.qam.modulation = str2qam(qam);
-			info("initial transponder %u %u %d %d\n",
-					t->param.frequency,
-					sr,
-					t->param.u.qam.fec_inner,
-					t->param.u.qam.modulation);
-		}
-		else if (sscanf(buf, "T %u %4s %4s %4s %7s %4s %4s %4s\n",
-					&f, bw, fec, fec2, qam, mode, guard, hier) == 8) {
-			t = alloc_transponder(f);
-			t->type = FE_OFDM;
-			t->param.inversion = spectral_inversion;
-			t->param.u.ofdm.bandwidth = str2bandwidth(bw);
-			t->param.u.ofdm.code_rate_HP = str2fec(fec);
-			if (t->param.u.ofdm.code_rate_HP == FEC_NONE)
-				t->param.u.ofdm.code_rate_HP = FEC_AUTO;
-			t->param.u.ofdm.code_rate_LP = str2fec(fec2);
-			if (t->param.u.ofdm.code_rate_LP == FEC_NONE)
-				t->param.u.ofdm.code_rate_LP = FEC_AUTO;
-			t->param.u.ofdm.constellation = str2qam(qam);
-			t->param.u.ofdm.transmission_mode = str2mode(mode);
-			t->param.u.ofdm.guard_interval = str2guard(guard);
-			t->param.u.ofdm.hierarchy_information = str2hier(hier);
-			info("initial transponder %u %d %d %d %d %d %d %d\n",
-					t->param.frequency,
-					t->param.u.ofdm.bandwidth,
-					t->param.u.ofdm.code_rate_HP,
-					t->param.u.ofdm.code_rate_LP,
-					t->param.u.ofdm.constellation,
-					t->param.u.ofdm.transmission_mode,
-					t->param.u.ofdm.guard_interval,
-					t->param.u.ofdm.hierarchy_information);
-		}
-		else if (sscanf(buf, "A %u %7s\n",
-					&f,qam) == 2) {
-			t = alloc_transponder(f);
-			t->type = FE_ATSC;
-			t->param.u.vsb.modulation = str2qam(qam);
-		} else
-			error("cannot parse'%s'\n", buf);
-	}
-*/
 
 	for (int chan = 2; chan < 52; ++chan) 
 	{	
@@ -2253,8 +2047,6 @@ static int tune_initial (int frontend_fd, __attribute__((unused)) const char *in
 		t->type = FE_ATSC;
 		t->param.u.vsb.modulation = VSB_8;
 	}
-
-	//fclose(inif);
 
 	return tune_to_next_transponder(frontend_fd);
 }
@@ -2307,49 +2099,12 @@ static void scan_tp_atsc(void)
 		   list_empty(&waiting_filters)));
 }
 
-static void scan_tp_dvb (void)
-{
-	struct section_buf s0;
-	struct section_buf s1;
-	struct section_buf s2;
-	struct section_buf s3;
-
-	/**
-	 *  filter timeouts > min repetition rates specified in ETR211
-	 */
-	setup_filter (&s0, demux_devname, 0x00, 0x00, -1, 1, 0, 5); /* PAT */
-	setup_filter (&s1, demux_devname, 0x11, 0x42, -1, 1, 0, 5); /* SDT */
-
-	add_filter (&s0);
-	add_filter (&s1);
-
-	if (!current_tp_only || output_format != OUTPUT_PIDS) {
-		setup_filter (&s2, demux_devname, 0x10, 0x40, -1, 1, 0, 15); /* NIT */
-		add_filter (&s2);
-		if (get_other_nits) {
-			/* get NIT-others
-			 * Note: There is more than one NIT-other: one per
-			 * network, separated by the network_id.
-			 */
-			setup_filter (&s3, demux_devname, 0x10, 0x41, -1, 1, 1, 15);
-			add_filter (&s3);
-		}
-	}
-
-	do {
-		read_filters ();
-	} while (!(list_empty(&running_filters) &&
-		   list_empty(&waiting_filters)));
-}
-
 static void scan_tp(void)
 {
 	switch(fe_info.type) {
 		case FE_QPSK:
 		case FE_QAM:
 		case FE_OFDM:
-			scan_tp_dvb();
-			break;
 		case FE_ATSC:
 			scan_tp_atsc();
 			break;
@@ -2358,9 +2113,9 @@ static void scan_tp(void)
 	}
 }
 
-static void scan_network (int frontend_fd, const char *initial)
+static void scan_network (int frontend_fd)
 {
-	if (tune_initial (frontend_fd, initial) < 0) {
+	if (tune_initial (frontend_fd) < 0) {
 		error("initial tuning failed\n");
 		return;
 	}
@@ -2627,13 +2382,7 @@ int main (int argc, char **argv)
 	int opt, i;
 	int frontend_fd;
 	int fe_open_mode;
-	const char *initial __attribute__((unused)) = NULL;
 	char *charset;
-
-	if (argc <= 1) {
-	    bad_usage(argv[0], 2);
-	    return -1;
-	}
 
 	/*
 	 * Get the environment charset, and use it as the default
@@ -2682,11 +2431,11 @@ int main (int argc, char **argv)
 		case 's':
 			switch_pos = strtoul(optarg, NULL, 0);
 			break;
-		case 'o':
-                        if      (strcmp(optarg, "zap") == 0) output_format = OUTPUT_ZAP;
-                        else if (strcmp(optarg, "vdr") == 0) output_format = OUTPUT_VDR;
-                        else if (strcmp(optarg, "pids") == 0) output_format = OUTPUT_PIDS;
-                        else {
+    	case 'o':
+            if      (strcmp(optarg, "zap") == 0) output_format = OUTPUT_ZAP;
+            else if (strcmp(optarg, "vdr") == 0) output_format = OUTPUT_VDR;
+            else if (strcmp(optarg, "pids") == 0) output_format = OUTPUT_PIDS;
+            else {
 				bad_usage(argv[0], 0);
 				return -1;
 			}
@@ -2746,16 +2495,10 @@ int main (int argc, char **argv)
 		default:
 			bad_usage(argv[0], 0);
 			return -1;
+			break;
 		};
 	}
 
-	if (optind < argc)
-		initial = argv[optind];
-	if ((!initial && !current_tp_only) || (initial && current_tp_only) ||
-			(spectral_inversion > 2)) {
-		bad_usage(argv[0], 0);
-		return -1;
-	}
 	lnb_type.low_val *= 1000;	/* convert to kiloherz */
 	lnb_type.high_val *= 1000;	/* convert to kiloherz */
 	lnb_type.switch_val *= 1000;	/* convert to kiloherz */
@@ -2763,8 +2506,8 @@ int main (int argc, char **argv)
 		fprintf (stderr, "switch position needs to be < 4!\n");
 		return -1;
 	}
-	if (initial)
-		info("scanning %s\n", initial);
+	
+	info("scanning \n");
 
 	snprintf (frontend_devname, sizeof(frontend_devname),
 		  "/dev/dvb/adapter%i/frontend%i", adapter, frontend);
@@ -2800,7 +2543,7 @@ int main (int argc, char **argv)
 		scan_tp ();
 	}
 	else
-		scan_network (frontend_fd, initial);
+		scan_network (frontend_fd);
 
 	close (frontend_fd);
 
