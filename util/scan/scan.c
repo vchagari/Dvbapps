@@ -352,6 +352,8 @@ static void parse_network_name_descriptor (const unsigned char *buf, void *dummy
 	info("Network Name '%.*s'\n", len, buf + 2);
 }
 
+//CHECK
+#if 0
 static void parse_terrestrial_uk_channel_number (const unsigned char *buf, void *dummy)
 {
 	(void)dummy;
@@ -383,8 +385,9 @@ static void parse_terrestrial_uk_channel_number (const unsigned char *buf, void 
 		buf += 4;
 	}
 }
+#endif 
 
-
+#if 0
 static long bcd32_to_cpu (const int b0, const int b1, const int b2, const int b3)
 {
 	return ((b0 >> 4) & 0x0f) * 10000000 + (b0 & 0x0f) * 1000000 +
@@ -392,8 +395,9 @@ static long bcd32_to_cpu (const int b0, const int b1, const int b2, const int b3
 	       ((b2 >> 4) & 0x0f) * 1000     + (b2 & 0x0f) * 100 +
 	       ((b3 >> 4) & 0x0f) * 10       + (b3 & 0x0f);
 }
+#endif 
 
-
+#if 0
 static const fe_code_rate_t fec_tab [8] = {
 	FEC_AUTO, FEC_1_2, FEC_2_3, FEC_3_4,
 	FEC_5_6, FEC_7_8, FEC_NONE, FEC_NONE
@@ -523,6 +527,7 @@ static void parse_terrestrial_delivery_system_descriptor (const unsigned char *b
 		dprintf(5, "\n");
 	}
 }
+#endif 
 
 static void parse_frequency_list_descriptor (const unsigned char *buf,
 				      struct transponder *t)
@@ -1055,12 +1060,12 @@ static void parse_descriptors(enum table_type t, const unsigned char *buf,
 
 		case 0x43:
 			if (t == NIT)
-				parse_satellite_delivery_system_descriptor (buf, data);
-			break;
+				//parse_satellite_delivery_system_descriptor (buf, data);
+			break; 
 
 		case 0x44:
 			if (t == NIT)
-				parse_cable_delivery_system_descriptor (buf, data);
+				//parse_cable_delivery_system_descriptor (buf, data);
 			break;
 
 		case 0x48:
@@ -1075,7 +1080,7 @@ static void parse_descriptors(enum table_type t, const unsigned char *buf,
 
 		case 0x5a:
 			if (t == NIT)
-				parse_terrestrial_delivery_system_descriptor (buf, data);
+				//parse_terrestrial_delivery_system_descriptor (buf, data);
 			break;
 
 		case 0x62:
@@ -1083,6 +1088,7 @@ static void parse_descriptors(enum table_type t, const unsigned char *buf,
 				parse_frequency_list_descriptor (buf, data);
 			break;
 
+#if 0
 		case 0x83:
 			/* 0x83 is in the privately defined range of descriptor tags,
 			 * so we parse this only if the user says so to avoid
@@ -1090,7 +1096,7 @@ static void parse_descriptors(enum table_type t, const unsigned char *buf,
 			if (t == NIT && vdr_dump_channum)
 				parse_terrestrial_uk_channel_number (buf, data);
 			break;
-
+#endif
 		default:
 			verbosedebug("skip descriptor 0x%02x\n", descriptor_tag);
 		};
@@ -1909,31 +1915,13 @@ static int __tune_to_transponder (int frontend_fd, struct transponder *t)
 	return -1;
 }
 
-static int set_delivery_system(int fd, unsigned type)
+static int set_delivery_system(int fd)
 {
 	struct dtv_properties props;
 	struct dtv_property dvb_prop[1];
-	unsigned delsys;
-
-	switch (type) {
-		case FE_QPSK:
-			delsys = SYS_DVBS;
-			break;
-		case FE_QAM:
-			delsys = SYS_DVBC_ANNEX_AC;
-			break;
-		case FE_OFDM:
-			delsys = SYS_DVBT;
-			break;
-		case FE_ATSC:
-			delsys = SYS_ATSC;
-			break;
-		default:
-			return -1;
-	}
 
 	dvb_prop[0].cmd = DTV_DELIVERY_SYSTEM;
-	dvb_prop[0].u.data = delsys;
+	dvb_prop[0].u.data = SYS_ATSC;
 	props.num = 1;
 	props.props = dvb_prop;
 	if (ioctl(fd, FE_SET_PROPERTY, &props) >= 0)
@@ -1951,7 +1939,7 @@ static int tune_to_transponder (int frontend_fd, struct transponder *t)
 	t->scan_done = 1;
 
 	if (t->type != fe_info.type) {
-		rc = set_delivery_system(frontend_fd, t->type);
+		rc = set_delivery_system(frontend_fd);
 		if (!rc)
 			fe_info.type = t->type;
 	}
@@ -2126,6 +2114,7 @@ static void scan_network (int frontend_fd)
 }
 
 
+#if 0
 static void pids_dump_service_parameter_set(FILE *f, struct service *s)
 {
         int i;
@@ -2160,6 +2149,7 @@ static void pids_dump_service_parameter_set(FILE *f, struct service *s)
 		fprintf(f, " SUB 0x%04x", s->subtitling_pid);
 	fprintf(f, "\n");
 }
+#endif
 
 static char sat_polarisation (struct transponder *t)
 {
@@ -2173,6 +2163,7 @@ static int sat_number (struct transponder *t)
 	return switch_pos;
 }
 
+#if 0
 static void dump_lists (void)
 {
 	struct list_head *p1, *p2;
@@ -2276,6 +2267,7 @@ static void dump_lists (void)
 	}
 	info("Done.\n");
 }
+#endif 
 
 static void show_existing_tuning_data_files(void)
 {
@@ -2298,14 +2290,6 @@ static void show_existing_tuning_data_files(void)
 		free (globspec);
 		globfree (&globbuf);
 	}
-}
-
-static void handle_sigint(int sig)
-{
-	(void)sig;
-	error("interrupted by SIGINT, dumping partial result...\n");
-	dump_lists();
-	exit(2);
 }
 
 static const char *usage = "\n"
@@ -2532,8 +2516,6 @@ int main (int argc, char **argv)
 		spectral_inversion = INVERSION_OFF;
 	}
 
-	signal(SIGINT, handle_sigint);
-
 	if (current_tp_only) {
 		current_tp = alloc_transponder(0); /* dummy */
 		/* move TP from "new" to "scanned" list */
@@ -2547,7 +2529,7 @@ int main (int argc, char **argv)
 
 	close (frontend_fd);
 
-	dump_lists ();
+	//dump_lists ();
 
 	return 0;
 }
