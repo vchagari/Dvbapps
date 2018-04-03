@@ -2366,7 +2366,7 @@ bad_usage(char *pname, int problem)
 
 int main (int argc, char **argv)
 {
-	char frontend_devname [80];
+	char frontend_devname [80]; // memset this buffer
 	int adapter = 0, frontend = 0, demux = 0;
 	int opt, i;
 	int frontend_fd;
@@ -2456,7 +2456,7 @@ int main (int argc, char **argv)
 				return -1;
 			}
 			break;
-#endif
+
 		case 'v':
 			verbosity++;
 			break;
@@ -2464,7 +2464,7 @@ int main (int argc, char **argv)
 			if (--verbosity < 0)
 				verbosity = 0;
 			break;
-#if 0
+
 		case 'u':
 			vdr_dump_channum = 1;
 			break;
