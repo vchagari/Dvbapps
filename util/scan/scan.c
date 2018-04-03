@@ -58,16 +58,16 @@ int verbosity = 2;
 
 static int long_timeout;
 static int current_tp_only;
-static int get_other_nits;
-static int vdr_dump_provider;
-static int vdr_dump_channum;
+//static int get_other_nits;
+//static int vdr_dump_provider;
+//static int vdr_dump_channum;
 static int no_ATSC_PSIP;
 static int ATSC_type=1;
-static int ca_select = -1;
-static int serv_select = 7;
-static int vdr_version = 3;
+//static int ca_select = -1;
+//static int serv_select = 7;
+//static int vdr_version = 3;
 static struct lnb_types_st lnb_type;
-static int unique_anon_services;
+//static int unique_anon_services;
 
 char *default_charset = "ISO-6937";
 char *output_charset;
@@ -388,6 +388,7 @@ static void parse_terrestrial_uk_channel_number (const unsigned char *buf, void 
 #endif 
 
 #if 0
+
 static long bcd32_to_cpu (const int b0, const int b1, const int b2, const int b3)
 {
 	return ((b0 >> 4) & 0x0f) * 10000000 + (b0 & 0x0f) * 1000000 +
@@ -395,9 +396,8 @@ static long bcd32_to_cpu (const int b0, const int b1, const int b2, const int b3
 	       ((b2 >> 4) & 0x0f) * 1000     + (b2 & 0x0f) * 100 +
 	       ((b3 >> 4) & 0x0f) * 10       + (b3 & 0x0f);
 }
-#endif 
 
-#if 0
+
 static const fe_code_rate_t fec_tab [8] = {
 	FEC_AUTO, FEC_1_2, FEC_2_3, FEC_3_4,
 	FEC_5_6, FEC_7_8, FEC_NONE, FEC_NONE
@@ -407,7 +407,7 @@ static const fe_code_rate_t fec_tab [8] = {
 static const fe_modulation_t qam_tab [6] = {
 	QAM_AUTO, QAM_16, QAM_32, QAM_64, QAM_128, QAM_256
 };
-
+ 
 
 static void parse_cable_delivery_system_descriptor (const unsigned char *buf,
 					     struct transponder *t)
@@ -441,6 +441,7 @@ static void parse_cable_delivery_system_descriptor (const unsigned char *buf,
 		dprintf(5, "\n");
 	}
 }
+
 
 static void parse_satellite_delivery_system_descriptor (const unsigned char *buf,
 						 struct transponder *t)
@@ -2087,6 +2088,7 @@ static void scan_tp_atsc(void)
 		   list_empty(&waiting_filters)));
 }
 
+#if 0
 static void scan_tp(void)
 {
 	switch(fe_info.type) {
@@ -2100,6 +2102,7 @@ static void scan_tp(void)
 			break;
 	}
 }
+#endif 
 
 static void scan_network (int frontend_fd)
 {
@@ -2109,7 +2112,8 @@ static void scan_network (int frontend_fd)
 	}
 
 	do {
-		scan_tp();
+		//scan_tp();
+		scan_tp_atsc();
 	} while (tune_to_next_transponder(frontend_fd) == 0);
 }
 
@@ -2149,6 +2153,7 @@ static void pids_dump_service_parameter_set(FILE *f, struct service *s)
 		fprintf(f, " SUB 0x%04x", s->subtitling_pid);
 	fprintf(f, "\n");
 }
+
 #endif
 
 static char sat_polarisation (struct transponder *t)
@@ -2302,7 +2307,7 @@ static const char *usage = "\n"
 	"	-a N	use DVB /dev/dvb/adapterN/\n"
 	"	-f N	use DVB /dev/dvb/adapter?/frontendN\n"
 	"	-d N	use DVB /dev/dvb/adapter?/demuxN\n"
-	"	-s N	use DiSEqC switch position N (DVB-S only)\n"
+//	"	-s N	use DiSEqC switch position N (DVB-S only)\n"
 	"	-i N	spectral inversion setting (0: off, 1: on, 2: auto [default])\n"
 	"	-n	evaluate NIT-other for full network scan (slow!)\n"
 	"	-5	multiply all filter timeouts by factor 5\n"
@@ -2320,13 +2325,13 @@ static const char *usage = "\n"
 	"		Vdr version 1.3.x and up implies -p.\n"
 	"	-l lnb-type (DVB-S Only) (use -l help to print types) or \n"
 	"	-l low[,high[,switch]] in Mhz\n"
-	"	-u      UK DVB-T Freeview channel numbering for VDR\n\n"
+//	"	-u      UK DVB-T Freeview channel numbering for VDR\n\n"
 	"	-P do not use ATSC PSIP tables for scanning\n"
 	"	    (but only PAT and PMT) (applies for ATSC only)\n"
 	"	-A N	check for ATSC 1=Terrestrial [default], 2=Cable or 3=both\n"
-	"	-U	Uniquely name unknown services\n"
-	"	-C cs	Override default charset for service name/provider (default = ISO-6937)\n"
-	"	-D cs	Output charset (default = %s)\n"
+//	"	-U	Uniquely name unknown services\n"
+//	"	-C cs	Override default charset for service name/provider (default = ISO-6937)\n"
+//	"	-D cs	Output charset (default = %s)\n"
 	"Supported charsets by -C/-D parameters can be obtained via 'iconv -l' command\n";
 
 void
@@ -2400,15 +2405,18 @@ int main (int argc, char **argv)
 			if (!output_format_set)
 				output_format = OUTPUT_PIDS;
 			break;
+#if 0
 		case 'n':
 			get_other_nits = 1;
 			break;
+#endif 
 		case 'd':
 			demux = strtoul(optarg, NULL, 0);
 			break;
 		case 'f':
 			frontend = strtoul(optarg, NULL, 0);
 			break;
+#if 0
 		case 'p':
 			vdr_dump_provider = 1;
 			break;
@@ -2425,9 +2433,11 @@ int main (int argc, char **argv)
 			}
 			output_format_set = 1;
 			break;
+#endif
 		case '5':
 			long_timeout = 1;
 			break;
+#if 0
 		case 'x':
 			ca_select = strtoul(optarg, NULL, 0);
 			break;
@@ -2446,6 +2456,7 @@ int main (int argc, char **argv)
 				return -1;
 			}
 			break;
+#endif
 		case 'v':
 			verbosity++;
 			break;
@@ -2453,9 +2464,11 @@ int main (int argc, char **argv)
 			if (--verbosity < 0)
 				verbosity = 0;
 			break;
+#if 0
 		case 'u':
 			vdr_dump_channum = 1;
 			break;
+#endif 
 		case 'P':
 			no_ATSC_PSIP = 1;
 			break;
@@ -2467,15 +2480,18 @@ int main (int argc, char **argv)
 			}
 
 			break;
+#if 0
 		case 'U':
 			unique_anon_services = 1;
 			break;
+ 
 		case 'C':
 			default_charset = optarg;
-			break;
+			break; 
 		case 'D':
 			output_charset = optarg;
 			break;
+#endif 
 		default:
 			bad_usage(argv[0], 0);
 			return -1;
@@ -2486,11 +2502,13 @@ int main (int argc, char **argv)
 	lnb_type.low_val *= 1000;	/* convert to kiloherz */
 	lnb_type.high_val *= 1000;	/* convert to kiloherz */
 	lnb_type.switch_val *= 1000;	/* convert to kiloherz */
+#if 0
 	if (switch_pos >= 4) {
 		fprintf (stderr, "switch position needs to be < 4!\n");
 		return -1;
 	}
-	
+#endif 
+
 	info("scanning \n");
 
 	snprintf (frontend_devname, sizeof(frontend_devname),
@@ -2522,17 +2540,19 @@ int main (int argc, char **argv)
 		list_del_init(&current_tp->list);
 		list_add_tail(&current_tp->list, &scanned_transponders);
 		current_tp->scan_done = 1;
-		scan_tp ();
+		//scan_tp ();
+		scan_tp_atsc();
 	}
 	else
 		scan_network (frontend_fd);
 
 	close (frontend_fd);
 
-	//dump_lists ();
+	//dump_lists();
 
 	return 0;
 }
+
 
 static void dump_dvb_parameters (FILE *f, struct transponder *t)
 {
@@ -2550,3 +2570,4 @@ static void dump_dvb_parameters (FILE *f, struct transponder *t)
 			break;
 	}
 }
+
