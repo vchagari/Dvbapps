@@ -58,16 +58,21 @@ int verbosity = 2;
 
 static int long_timeout;
 static int current_tp_only;
+static int no_ATSC_PSIP;
+static int ATSC_type=1;
+static int save_channel_info = 1; 
 //static int get_other_nits;
 //static int vdr_dump_provider;
 //static int vdr_dump_channum;
-static int no_ATSC_PSIP;
-static int ATSC_type=1;
 //static int ca_select = -1;
 //static int serv_select = 7;
 //static int vdr_version = 3;
-static struct lnb_types_st lnb_type;
 //static int unique_anon_services;
+
+static struct lnb_types_st lnb_type;
+
+static int rf_chan; 
+static int fe_fd; 
 
 char *default_charset = "ISO-6937";
 char *output_charset;
@@ -173,12 +178,34 @@ struct section_buf {
 					 */
 };
 
+struct virtual_channels {
+	char vchan_name[20];
+	int vchan_major_num; 
+	int vchan_minor_num;
+	int vchan_video_pid;
+	int vchan_audio_pid;
+};
+
+struct channel_info {
+	int chan_num;
+	int chan_freq;
+	int lock_status;
+	int rssi_dBm;
+	int snr_dB;
+	int ber;
+	int uncorrected_blks;
+	int num_vchans;
+	struct virtual_channels vc[16]; 
+};
+
+static struct channel_info *pchan_info; 
+
 static LIST_HEAD(scanned_transponders);
 static LIST_HEAD(new_transponders);
 static struct transponder *current_tp;
 
 
-static void dump_dvb_parameters (FILE *f, struct transponder *p);
+static void dump_dvb_parameters (FILE *f, struct transponder *t);
 
 static void setup_filter (struct section_buf* s, const char *dmx_devname,
 		          int pid, int tid, int tid_ext,
@@ -188,6 +215,10 @@ static void add_filter (struct section_buf *s);
 static const char * fe_type2str(fe_type_t t);
 
 static int atsc_chan_to_mhz(int chan);
+static int atsc_mhz_to_chan(int freq_mhz); 
+static void cleanup(void);
+static void print_struct_buffers(void);
+
 
 /* According to the DVB standards, the combination of network_id and
  * transport_stream_id should be unique, but in real life the satellite
@@ -1089,15 +1120,14 @@ static void parse_descriptors(enum table_type t, const unsigned char *buf,
 				parse_frequency_list_descriptor (buf, data);
 			break;
 
-#if 0
 		case 0x83:
 			/* 0x83 is in the privately defined range of descriptor tags,
 			 * so we parse this only if the user says so to avoid
 			 * problems when 0x83 is something entirely different... */
-			if (t == NIT && vdr_dump_channum)
-				parse_terrestrial_uk_channel_number (buf, data);
+			//if (t == NIT && vdr_dump_channum)
+			//	parse_terrestrial_uk_channel_number (buf, data);
 			break;
-#endif
+		
 		default:
 			verbosedebug("skip descriptor 0x%02x\n", descriptor_tag);
 		};
@@ -1435,6 +1465,10 @@ static void parse_psip_vct (const unsigned char *buf, int section_length,
 	int i;
 	int pseudo_id = 0xffff;
 	unsigned char *b = (unsigned char *) buf + 2;
+	uint16_t snr, signal;
+	uint32_t ber, uncorrected_blocks;
+	fe_status_t status;
+	int idx = rf_chan - 2;
 
 	for (i = 0; i < num_channels_in_section; i++) {
 		struct service *s;
@@ -1484,8 +1518,53 @@ static void parse_psip_vct (const unsigned char *buf, int section_length,
 			info("service is running.");
 		}
 
-		info(" Channel number: %d:%d. Name: '%s'\n",
-			ch.major_channel_number, ch.minor_channel_number,s->service_name);
+		if (save_channel_info) {
+			
+			if (i == 0) {
+				if (ioctl(fe_fd, FE_READ_STATUS, &status) == -1) {
+					errorn("FE_READ_STATUS failed");
+					return ;
+				}
+
+				verbose(">>> tuning status == 0x%02x\n", status);
+
+				if (ioctl(fe_fd, FE_READ_SIGNAL_STRENGTH, &signal) == -1)
+					signal = -2;
+
+				if (ioctl(fe_fd, FE_READ_SNR, &snr) == -1)
+					snr = -2;
+
+				if (ioctl(fe_fd, FE_READ_BER, &ber) == -1)
+					ber = -2;
+
+				if (ioctl(fe_fd, FE_READ_UNCORRECTED_BLOCKS, &uncorrected_blocks) == -1)
+					uncorrected_blocks = -2;
+			
+				pchan_info[idx].chan_num = rf_chan;
+				pchan_info[idx].chan_freq = atsc_chan_to_mhz(rf_chan);
+				pchan_info[idx].snr_dB = snr;
+				pchan_info[idx].rssi_dBm = signal;
+				pchan_info[idx].ber = ber;
+				pchan_info[idx].uncorrected_blks = uncorrected_blocks;
+				pchan_info[idx].lock_status = 0;
+				pchan_info[idx].num_vchans = num_channels_in_section;
+				
+				if ( status & FE_HAS_LOCK) {
+					pchan_info[idx].lock_status = 1; 	
+					info("status %02x | signal %04x | snr %04x | ber %08x | unc %08x | ", 
+					status, signal, snr, ber, uncorrected_blocks);
+				}
+			}
+
+			strcpy(pchan_info[idx].vc[i].vchan_name, s->service_name);
+			pchan_info[idx].vc[i].vchan_major_num = ch.major_channel_number;
+			pchan_info[idx].vc[i].vchan_minor_num = ch.minor_channel_number;
+			pchan_info[idx].vc[i].vchan_video_pid = s->video_pid;
+			pchan_info[idx].vc[i].vchan_audio_pid = s->audio_pid[0];	
+		}	
+	
+		info("Channel number: %d:%d. Name: '%s'\n",
+		ch.major_channel_number, ch.minor_channel_number,s->service_name);
 
 		b += 32 + ch.descriptors_length;
 	}
@@ -1866,10 +1945,13 @@ static int switch_pos = 0;
 static int __tune_to_transponder (int frontend_fd, struct transponder *t)
 {
 	struct dvb_frontend_parameters p;
+//	uint16_t snr, signal;
+//	uint32_t ber, uncorrected_blocks;
 	fe_status_t s;
+	current_tp = t;
 	int i;
 
-	current_tp = t;
+//	printf("\n__tune_to_transponder\n");
 
 	if (mem_is_zero (&t->param, sizeof(struct dvb_frontend_parameters)))
 		return -1;
@@ -1889,6 +1971,10 @@ static int __tune_to_transponder (int frontend_fd, struct transponder *t)
 		return -1;
 	}
 
+	rf_chan = atsc_mhz_to_chan(t->param.frequency/1000000);
+	if (rf_chan < 0)
+		info("Out of frequency Range: atsc_mhz_to_chan\n"); 
+	
 	for (i = 0; i < 10; i++) {
 		usleep (200000);
 
@@ -1897,15 +1983,33 @@ static int __tune_to_transponder (int frontend_fd, struct transponder *t)
 			return -1;
 		}
 
+#if 0
+		if (ioctl(frontend_fd, FE_READ_SIGNAL_STRENGTH, &signal) == -1)
+			signal = -2;
+		if (ioctl(frontend_fd, FE_READ_SNR, &snr) == -1)
+			snr = -2;
+		if (ioctl(frontend_fd, FE_READ_BER, &ber) == -1)
+			ber = -2;
+		if (ioctl(frontend_fd, FE_READ_UNCORRECTED_BLOCKS, &uncorrected_blocks) == -1)
+			uncorrected_blocks = -2;
+
 		verbose(">>> tuning status == 0x%02x\n", s);
+#endif 
 
 		if (s & FE_HAS_LOCK) {
 			t->last_tuning_failed = 0;
-			//t->param.frequency
+#if 0
+			if ( (s & FE_HAS_SIGNAL) && (s & FE_HAS_CARRIER) && 
+			(s & FE_HAS_VITERBI) && (s & FE_HAS_SYNC)) { 	
+				printf("\nFrequency:%d\n",t->param.frequency);
+				printf("status %02x | signal %04x | snr %04x | ber %08x | unc %08x | ", s, signal, snr, ber, uncorrected_blocks);
+			}	
+
 			//system("vlc atsc://frequency=497000000");
 			//usleep(100000);
 			//system("killall vlc");
-			return 0;
+#endif 
+			return 0;	
 		}
 	}
 
@@ -1915,6 +2019,7 @@ static int __tune_to_transponder (int frontend_fd, struct transponder *t)
 
 	return -1;
 }
+
 
 static int set_delivery_system(int fd)
 {
@@ -1953,8 +2058,9 @@ static int tune_to_transponder (int frontend_fd, struct transponder *t)
 		return -1;
 	}
 
-	if (__tune_to_transponder (frontend_fd, t) == 0)
-		return 0;
+//	printf("\ntune_to_transponder\n");
+	//if (__tune_to_transponder (frontend_fd, t) == 0)
+	//	return 0;
 
 	return __tune_to_transponder (frontend_fd, t);
 }
@@ -1967,12 +2073,14 @@ static int tune_to_next_transponder (int frontend_fd)
 	uint32_t freq;
 
 	list_for_each_safe(pos, tmp, &new_transponders) {
+//		printf("\nTune_to_next_transponder:Looping\n");
 		t = list_entry (pos, struct transponder, list);
 retry:
 		if (tune_to_transponder (frontend_fd, t) == 0)
 			return 0;
 next:
 		if (t->other_frequency_flag && t->other_f && t->n_other_f) {
+			printf("\n insdie the if loop \n");
 			/* check if the alternate freqeuncy is really new to us */
 			freq = t->other_f[t->n_other_f - 1];
 			t->n_other_f--;
@@ -2028,35 +2136,51 @@ static const char * fe_type2str(fe_type_t t)
 static int tune_initial (int frontend_fd)
 {
 	struct transponder *t;
-
-	for (int chan = 2; chan < 52; ++chan) 
-	{	
+	
+	for (int chan = 2; chan < 52; ++chan) {	
 		int32_t freq_hz = atsc_chan_to_mhz(chan) * 1000000;
 		t = alloc_transponder(freq_hz);
 		t->type = FE_ATSC;
 		t->param.u.vsb.modulation = VSB_8;
 	}
 
-	return tune_to_next_transponder(frontend_fd);
+	//return tune_to_next_transponder(frontend_fd);
+	return 0; 
 }
 
 static int atsc_chan_to_mhz(int chan)
 {
-	if (chan >= 2 && chan <= 4)
-	{
+	if (chan >= 2 && chan <= 4) {
 		return 57 + (chan - 2) * 6;
 	}
-	else if (chan >= 5 && chan <= 6)
-	{
+	else if (chan >= 5 && chan <= 6) {
 		return 79 + (chan - 5) * 6;
 	}
-	else if (chan >= 7 && chan <= 13)
-	{
+	else if (chan >= 7 && chan <= 13) {
 		return 177 + (chan - 7) * 6;
 	}
-	else if (chan >=14 && chan <= 51)
-	{
+	else if (chan >=14 && chan <= 51) {
 		return 473 + (chan - 14) * 6;
+	}
+
+	return -1;
+}
+
+static int atsc_mhz_to_chan(int freq_mhz)
+{
+	int freq = freq_mhz;
+
+	if (freq >= 57 && freq <= 69) {
+		return 2 + ( ( freq - 57) / 6); 
+	}
+	else if (freq >= 79 && freq <= 85) {
+		return 5 + ( ( freq - 79) / 6);
+	}
+	else if (freq >= 177 && freq <= 213) {
+		return 7 + ( ( freq - 177) / 6);
+	}
+	else if (freq >= 473 && freq <= 695) {
+		return 14 + ( ( freq - 473) / 6);
 	}
 
 	return -1;
@@ -2065,6 +2189,8 @@ static int atsc_chan_to_mhz(int chan)
 static void scan_tp_atsc(void)
 {
 	struct section_buf s0,s1,s2;
+
+//	printf("\nScan_tp_atsc\n");
 
 	if (no_ATSC_PSIP) {
 		setup_filter(&s0, demux_devname, 0x00, 0x00, -1, 1, 0, 5); /* PAT */
@@ -2083,6 +2209,7 @@ static void scan_tp_atsc(void)
 	}
 
 	do {
+		//printf("\nScan_tp_atsc looping\n");
 		read_filters ();
 	} while (!(list_empty(&running_filters) &&
 		   list_empty(&waiting_filters)));
@@ -2112,6 +2239,7 @@ static void scan_network (int frontend_fd)
 	}
 
 	do {
+		//printf("\nScan_network: In do while loop\n");
 		//scan_tp();
 		scan_tp_atsc();
 	} while (tune_to_next_transponder(frontend_fd) == 0);
@@ -2372,7 +2500,7 @@ int main (int argc, char **argv)
 	int frontend_fd;
 	int fe_open_mode;
 	char *charset;
-
+	
 	/*
 	 * Get the environment charset, and use it as the default
 	 * output charset. In thesis, using nl_langinfo should be
@@ -2395,7 +2523,7 @@ int main (int argc, char **argv)
 
 	/* start with default lnb type */
 	lnb_type = *lnb_enum(0);
-	while ((opt = getopt(argc, argv, "5cnpa:f:d:s:o:x:e:t:i:l:vquPA:UC:D:")) != -1) {
+	while ((opt = getopt(argc, argv, "5cnpa:f:d:s:o:x:e:t:i:l:vquPA:UC:D:L:")) != -1) {
 		switch (opt) {
 		case 'a':
 			adapter = strtoul(optarg, NULL, 0);
@@ -2480,6 +2608,9 @@ int main (int argc, char **argv)
 			}
 
 			break;
+		case 'L':
+			save_channel_info = 1;
+			break;
 #if 0
 		case 'U':
 			unique_anon_services = 1;
@@ -2532,6 +2663,18 @@ int main (int argc, char **argv)
 	    !(fe_info.caps & FE_CAN_INVERSION_AUTO)) {
 		info("Frontend can not do INVERSION_AUTO, trying INVERSION_OFF instead\n");
 		spectral_inversion = INVERSION_OFF;
+	}	
+
+	if (save_channel_info) {
+
+		pchan_info = (struct channel_info *) calloc( 50, sizeof(struct channel_info)); 
+		
+		if (pchan_info == NULL) {
+			printf("MEMEORY NOT ALLOCATED: pchan_info \n");
+			return -1;
+		}
+
+		fe_fd = frontend_fd;
 	}
 
 	if (current_tp_only) {
@@ -2543,16 +2686,56 @@ int main (int argc, char **argv)
 		//scan_tp ();
 		scan_tp_atsc();
 	}
-	else
+	else {
 		scan_network (frontend_fd);
+	}
 
 	close (frontend_fd);
 
 	//dump_lists();
 
+	print_struct_buffers();
+
+	cleanup();
+
 	return 0;
 }
 
+static void print_struct_buffers()
+{
+	int i;
+	
+	for (i = 0; i < 50; ++ i) {
+		
+		printf("%d %d %d %d %d %d %d %d\n" ,pchan_info[i].chan_num,
+		pchan_info[i].chan_freq,
+		pchan_info[i].snr_dB,
+		pchan_info[i].rssi_dBm,
+		pchan_info[i].ber,
+		pchan_info[i].uncorrected_blks,
+		pchan_info[i].lock_status,
+		pchan_info[i].num_vchans);
+				
+
+		for ( int j = 0; j < pchan_info[i].num_vchans; ++j)
+		{
+			printf("%s %d %d %d %d\n\n", pchan_info[i].vc[j].vchan_name,
+			pchan_info[i].vc[j].vchan_major_num,
+			pchan_info[i].vc[j].vchan_minor_num,
+			pchan_info[i].vc[j].vchan_video_pid,
+			pchan_info[i].vc[j].vchan_audio_pid);	
+		}	
+	}
+
+}
+
+static void cleanup()
+{
+
+	if (save_channel_info) {
+		free(pchan_info);
+	}
+}
 
 static void dump_dvb_parameters (FILE *f, struct transponder *t)
 {

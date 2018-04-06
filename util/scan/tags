@@ -10,16 +10,16 @@ ATSC_extended_channel_name_descriptor	atsc_psip_section.h	/^struct ATSC_extended
 ATSC_service_location_descriptor	atsc_psip_section.h	/^struct ATSC_service_location_descriptor {$/;"	s
 ATSC_service_location_element	atsc_psip_section.h	/^struct ATSC_service_location_element {$/;"	s
 ATSC_type	scan.c	/^static int ATSC_type=1;$/;"	v	file:
-AUDIO_CHAN_MAX	scan.c	108;"	d	file:
-CA_SYSTEM_ID_MAX	scan.c	109;"	d	file:
-CS_OPTIONS	scan.c	74;"	d	file:
-DATADIR	scan.c	2492;"	d	file:
+AUDIO_CHAN_MAX	scan.c	113;"	d	file:
+CA_SYSTEM_ID_MAX	scan.c	114;"	d	file:
+CS_OPTIONS	scan.c	79;"	d	file:
+DATADIR	scan.c	2410;"	d	file:
 ETM_location	atsc_psip_section.h	/^		u8  ETM_location              : 2;$/;"	m	struct:tvct_channel
 INIT_LIST_HEAD	list.h	24;"	d
 ISO_639_language_code	atsc_psip_section.h	/^		u32 ISO_639_language_code     :24;$/;"	m	struct:ATSC_service_location_element
 LIST_HEAD	list.h	21;"	d
 LIST_HEAD_INIT	list.h	19;"	d
-MAX_RUNNING	scan.c	1665;"	d	file:
+MAX_RUNNING	scan.c	1753;"	d	file:
 NIT	scan.c	/^	NIT$/;"	e	enum:table_type	file:
 OUTPUT_PIDS	scan.c	/^	OUTPUT_PIDS$/;"	e	enum:format	file:
 OUTPUT_VDR	scan.c	/^        OUTPUT_VDR,$/;"	e	enum:format	file:
@@ -57,11 +57,13 @@ access_controlled	atsc_psip_section.h	/^		u8  access_controlled         : 1;$/;"
 add_filter	scan.c	/^static void add_filter (struct section_buf *s)$/;"	f	file:
 alloc_service	scan.c	/^static struct service *alloc_service(struct transponder *tp, int service_id)$/;"	f	file:
 alloc_transponder	scan.c	/^static struct transponder *alloc_transponder(uint32_t frequency)$/;"	f	file:
+atsc_chan_to_mhz	scan.c	/^static int atsc_chan_to_mhz(int chan)$/;"	f	file:
+atsc_mhz_to_chan	scan.c	/^static int atsc_mhz_to_chan(int freq_mhz)$/;"	f	file:
 audio_lang	scan.c	/^	char audio_lang[AUDIO_CHAN_MAX][4];$/;"	m	struct:service	file:
 audio_num	scan.c	/^	int audio_num;$/;"	m	struct:service	file:
 audio_pid	scan.c	/^	uint16_t audio_pid[AUDIO_CHAN_MAX];$/;"	m	struct:service	file:
 bad_usage	scan.c	/^bad_usage(char *pname, int problem)$/;"	f
-bcd32_to_cpu	scan.c	/^static long bcd32_to_cpu (const int b0, const int b1, const int b2, const int b3)$/;"	f	file:
+ber	scan.c	/^	int ber;$/;"	m	struct:channel_info	file:
 binaries	Makefile	/^binaries = scan$/;"	m
 buf	scan.c	/^	unsigned char buf[1024];$/;"	m	struct:section_buf	file:
 bw_name	dump-vdr.c	/^static const char *bw_name [] = {$/;"	v	file:
@@ -70,12 +72,15 @@ c_footer	section_generate.pl	/^sub c_footer$/;"	s
 c_header	section_generate.pl	/^sub c_header$/;"	s
 ca_id	scan.c	/^	uint16_t ca_id[CA_SYSTEM_ID_MAX];$/;"	m	struct:service	file:
 ca_num	scan.c	/^	int ca_num;$/;"	m	struct:service	file:
-ca_select	scan.c	/^static int ca_select = -1;$/;"	v	file:
 carrier_frequency	atsc_psip_section.h	/^		u32 carrier_frequency         :32;$/;"	m	struct:tvct_channel
 cband_desc	lnb.c	/^static char *cband_desc[] = {$/;"	v	file:
+chan_freq	scan.c	/^	int chan_freq;$/;"	m	struct:channel_info	file:
+chan_num	scan.c	/^	int chan_num;$/;"	m	struct:channel_info	file:
 channel_TSID	atsc_psip_section.h	/^		u16 channel_TSID              :16;$/;"	m	struct:tvct_channel
+channel_info	scan.c	/^struct channel_info {$/;"	s	file:
 channel_num	scan.c	/^	int channel_num;$/;"	m	struct:service	file:
 charset_conv	scan.c	/^struct charset_conv {$/;"	s	file:
+cleanup	scan.c	/^static void cleanup()$/;"	f	file:
 cmd	diseqc.h	/^	struct dvb_diseqc_master_cmd cmd;$/;"	m	struct:diseqc_cmd	typeref:struct:diseqc_cmd::dvb_diseqc_master_cmd
 cmulti_desc	lnb.c	/^static char *cmulti_desc[] = {$/;"	v	file:
 copy_transponder	scan.c	/^static void copy_transponder(struct transponder *d, struct transponder *s)$/;"	f	file:
@@ -100,7 +105,6 @@ do_it	section_generate.pl	/^sub do_it$/;"	s
 dpprintf	scan.h	15;"	d
 dprintf	scan.h	9;"	d
 dump_dvb_parameters	scan.c	/^static void dump_dvb_parameters (FILE *f, struct transponder *t)$/;"	f	file:
-dump_lists	scan.c	/^static void dump_lists (void)$/;"	f	file:
 elementary_PID	atsc_psip_section.h	/^		u16 elementary_PID            :13;$/;"	m	struct:ATSC_service_location_element
 en300468_latin_00_to_utf8	scan.c	/^struct charset_conv en300468_latin_00_to_utf8[256] = {$/;"	v	typeref:struct:charset_conv
 enhan_desc	lnb.c	/^static char *enhan_desc[] = {$/;"	v	file:
@@ -109,23 +113,21 @@ error	scan.h	19;"	d
 errorn	scan.h	20;"	d
 fatal	scan.h	18;"	d
 fd	scan.c	/^	int fd;$/;"	m	struct:section_buf	file:
+fe_fd	scan.c	/^static int fe_fd; $/;"	v	file:
 fe_info	scan.c	/^static struct dvb_frontend_info fe_info = {$/;"	v	typeref:struct:dvb_frontend_info	file:
 fe_type2str	scan.c	/^static const char * fe_type2str(fe_type_t t)$/;"	f	file:
 fec_name	dump-vdr.c	/^static const char *fec_name [] = {$/;"	v	file:
 fec_name	dump-zap.c	/^static const char *fec_name [] = {$/;"	v	file:
-fec_tab	scan.c	/^static const fe_code_rate_t fec_tab [8] = {$/;"	v	file:
 find_descriptor	scan.c	/^static int find_descriptor(uint8_t tag, const unsigned char *buf,$/;"	f	file:
 find_service	scan.c	/^static struct service *find_service(struct transponder *tp, int service_id)$/;"	f	file:
 find_transponder	scan.c	/^static struct transponder *find_transponder(uint32_t frequency)$/;"	f	file:
 format	scan.c	/^enum format {$/;"	g	file:
 getBits	section.c	/^u32 getBits (const u8 *buf, int startbit, int bitlen)$/;"	f
 get_bit	scan.c	/^static int get_bit (uint8_t *bitfield, int bit)$/;"	f	file:
-get_other_nits	scan.c	/^static int get_other_nits;$/;"	v	file:
 guard_name	dump-vdr.c	/^static const char *guard_name [] = {$/;"	v	file:
 guard_name	dump-zap.c	/^static const char *guard_name [] = {$/;"	v	file:
 h_footer	section_generate.pl	/^sub h_footer$/;"	s
 h_header	section_generate.pl	/^sub h_header$/;"	s
-handle_sigint	scan.c	/^static void handle_sigint(int sig)$/;"	f	file:
 hidden	atsc_psip_section.h	/^		u8  hidden                    : 1;$/;"	m	struct:tvct_channel
 hide_guide	atsc_psip_section.h	/^		u8  hide_guide                : 1;$/;"	m	struct:tvct_channel
 hierarchy_name	dump-vdr.c	/^static const char *hierarchy_name [] = {$/;"	v	file:
@@ -155,6 +157,7 @@ lnb_enum	lnb.c	/^lnb_enum(int curno)$/;"	f
 lnb_type	scan.c	/^static struct lnb_types_st lnb_type;$/;"	v	typeref:struct:lnb_types_st	file:
 lnb_types_st	lnb.h	/^struct lnb_types_st {$/;"	s
 lnbs	lnb.c	/^static struct lnb_types_st lnbs[] = {$/;"	v	typeref:struct:lnb_types_st	file:
+lock_status	scan.c	/^	int lock_status;$/;"	m	struct:channel_info	file:
 long_timeout	scan.c	/^static int long_timeout;$/;"	v	file:
 low_val	lnb.h	/^	unsigned long	low_val;$/;"	m	struct:lnb_types_st
 main	scan.c	/^int main (int argc, char **argv)$/;"	f
@@ -173,6 +176,7 @@ network_id	scan.c	/^	int network_id;$/;"	m	struct:transponder	file:
 next	list.h	/^	struct list_head *next, *prev;$/;"	m	struct:list_head	typeref:struct:list_head::list_head
 next_seg	scan.c	/^	struct section_buf *next_seg;	\/* this is used to handle$/;"	m	struct:section_buf	typeref:struct:section_buf::section_buf	file:
 no_ATSC_PSIP	scan.c	/^static int no_ATSC_PSIP;$/;"	v	file:
+num_vchans	scan.c	/^	int num_vchans;$/;"	m	struct:channel_info	file:
 number_elements	atsc_psip_section.h	/^		u8  number_elements           : 8;$/;"	m	struct:ATSC_service_location_descriptor
 objects	Makefile	/^objects  = atsc_psip_section.o \\$/;"	m
 orbital_pos	scan.c	/^	int orbital_pos;			\/* only for DVB-S *\/$/;"	m	struct:transponder	file:
@@ -186,7 +190,6 @@ param	scan.c	/^	struct dvb_frontend_parameters param;$/;"	m	struct:transponder	t
 parse_atsc_ext_chan_name_desc	scan.c	/^static void parse_atsc_ext_chan_name_desc(struct service *s,const unsigned char *buf)$/;"	f	file:
 parse_atsc_service_loc_desc	scan.c	/^static void parse_atsc_service_loc_desc(struct service *s,const unsigned char *buf)$/;"	f	file:
 parse_ca_identifier_descriptor	scan.c	/^static void parse_ca_identifier_descriptor (const unsigned char *buf,$/;"	f	file:
-parse_cable_delivery_system_descriptor	scan.c	/^static void parse_cable_delivery_system_descriptor (const unsigned char *buf,$/;"	f	file:
 parse_descriptors	scan.c	/^static void parse_descriptors(enum table_type t, const unsigned char *buf,$/;"	f	file:
 parse_frequency_list_descriptor	scan.c	/^static void parse_frequency_list_descriptor (const unsigned char *buf,$/;"	f	file:
 parse_iso639_language_descriptor	scan.c	/^static void parse_iso639_language_descriptor (const unsigned char *buf, struct service *s)$/;"	f	file:
@@ -196,15 +199,12 @@ parse_pat	scan.c	/^static void parse_pat(const unsigned char *buf, int section_l
 parse_pmt	scan.c	/^static void parse_pmt (const unsigned char *buf, int section_length, int service_id)$/;"	f	file:
 parse_psip_descriptors	scan.c	/^static void parse_psip_descriptors(struct service *s,const unsigned char *buf,int len)$/;"	f	file:
 parse_psip_vct	scan.c	/^static void parse_psip_vct (const unsigned char *buf, int section_length,$/;"	f	file:
-parse_satellite_delivery_system_descriptor	scan.c	/^static void parse_satellite_delivery_system_descriptor (const unsigned char *buf,$/;"	f	file:
 parse_sdt	scan.c	/^static void parse_sdt (const unsigned char *buf, int section_length,$/;"	f	file:
 parse_section	scan.c	/^static int parse_section (struct section_buf *s)$/;"	f	file:
 parse_service_descriptor	scan.c	/^static void parse_service_descriptor (const unsigned char *buf, struct service *s)$/;"	f	file:
-parse_terrestrial_delivery_system_descriptor	scan.c	/^static void parse_terrestrial_delivery_system_descriptor (const unsigned char *buf,$/;"	f	file:
-parse_terrestrial_uk_channel_number	scan.c	/^static void parse_terrestrial_uk_channel_number (const unsigned char *buf, void *dummy)$/;"	f	file:
+pchan_info	scan.c	/^static struct channel_info *pchan_info; $/;"	v	typeref:struct:channel_info	file:
 pcr_pid	scan.c	/^	uint16_t pcr_pid;$/;"	m	struct:service	file:
 pid	scan.c	/^	int pid;$/;"	m	struct:section_buf	file:
-pids_dump_service_parameter_set	scan.c	/^static void pids_dump_service_parameter_set(FILE *f, struct service *s)$/;"	f	file:
 pmt_pid	scan.c	/^	uint16_t pmt_pid;$/;"	m	struct:service	file:
 polarisation	scan.c	/^	enum polarisation polarisation;		\/* only for DVB-S *\/$/;"	m	struct:transponder	typeref:enum:transponder::polarisation	file:
 polarisation	scan.c	/^enum polarisation {$/;"	g	file:
@@ -216,7 +216,6 @@ program_number	atsc_psip_section.h	/^		u16 program_number            :16;$/;"	m	
 provider_name	scan.c	/^	char *provider_name;$/;"	m	struct:service	file:
 qam_name	dump-vdr.c	/^static const char *qam_name [] = {$/;"	v	file:
 qam_name	dump-zap.c	/^static const char *qam_name [] = {$/;"	v	file:
-qam_tab	scan.c	/^static const fe_modulation_t qam_tab [6] = {$/;"	v	file:
 read_ATSC_extended_channel_name_descriptor	atsc_psip_section.c	/^struct ATSC_extended_channel_name_descriptor read_ATSC_extended_channel_name_descriptor(const u8 *b)$/;"	f
 read_ATSC_service_location_descriptor	atsc_psip_section.c	/^struct ATSC_service_location_descriptor read_ATSC_service_location_descriptor(const u8 *b)$/;"	f
 read_ATSC_service_location_element	atsc_psip_section.c	/^struct ATSC_service_location_element read_ATSC_service_location_element(const u8 *b)$/;"	f
@@ -231,31 +230,31 @@ reserved0	atsc_psip_section.h	/^		u8  reserved0                 : 4;$/;"	m	struc
 reserved1	atsc_psip_section.h	/^		u8  reserved1                 : 2;$/;"	m	struct:tvct_channel
 reserved2	atsc_psip_section.h	/^		u8  reserved2                 : 3;$/;"	m	struct:tvct_channel
 reserved3	atsc_psip_section.h	/^		u8  reserved3                 : 6;$/;"	m	struct:tvct_channel
+rf_chan	scan.c	/^static int rf_chan; $/;"	v	file:
+rssi_dBm	scan.c	/^	int rssi_dBm;$/;"	m	struct:channel_info	file:
 run_once	scan.c	/^	unsigned int run_once  : 1;$/;"	m	struct:section_buf	file:
 running	scan.c	/^	enum running_mode running;$/;"	m	struct:service	typeref:enum:service::running_mode	file:
 running_mode	scan.c	/^enum running_mode {$/;"	g	file:
 running_time	scan.c	/^	time_t running_time;$/;"	m	struct:section_buf	file:
 sat_number	scan.c	/^static int sat_number (struct transponder *t)$/;"	f	file:
 sat_polarisation	scan.c	/^static char sat_polarisation (struct transponder *t)$/;"	f	file:
+save_channel_info	scan.c	/^static int save_channel_info = 1; $/;"	v	file:
 scan_done	scan.c	/^	unsigned int scan_done		  : 1;$/;"	m	struct:transponder	file:
-scan_network	scan.c	/^static void scan_network (int frontend_fd, const char *initial)$/;"	f	file:
-scan_tp	scan.c	/^static void scan_tp(void)$/;"	f	file:
+scan_network	scan.c	/^static void scan_network (int frontend_fd)$/;"	f	file:
 scan_tp_atsc	scan.c	/^static void scan_tp_atsc(void)$/;"	f	file:
-scan_tp_dvb	scan.c	/^static void scan_tp_dvb (void)$/;"	f	file:
 scrambled	scan.c	/^	unsigned int scrambled	  : 1;$/;"	m	struct:service	file:
 section_buf	scan.c	/^struct section_buf {$/;"	s	file:
 section_done	scan.c	/^	uint8_t section_done[32];$/;"	m	struct:section_buf	file:
 section_version_number	scan.c	/^	int section_version_number;$/;"	m	struct:section_buf	file:
 sectionfilter_done	scan.c	/^	int sectionfilter_done;$/;"	m	struct:section_buf	file:
 segmented	scan.c	/^	unsigned int segmented : 1;	\/* segmented by table_id_ext *\/$/;"	m	struct:section_buf	file:
-serv_select	scan.c	/^static int serv_select = 7;$/;"	v	file:
 service	scan.c	/^struct service {$/;"	s	file:
 service_id	scan.c	/^	int service_id;$/;"	m	struct:service	file:
 service_name	scan.c	/^	char *service_name;$/;"	m	struct:service	file:
 service_type	atsc_psip_section.h	/^		u8  service_type              : 6;$/;"	m	struct:tvct_channel
 services	scan.c	/^	struct list_head services;$/;"	m	struct:transponder	typeref:struct:transponder::list_head	file:
 set_bit	scan.c	/^static void set_bit (uint8_t *bitfield, int bit)$/;"	f	file:
-set_delivery_system	scan.c	/^static int set_delivery_system(int fd, unsigned type)$/;"	f	file:
+set_delivery_system	scan.c	/^static int set_delivery_system(int fd)$/;"	f	file:
 setup_filter	scan.c	/^static void setup_filter (struct section_buf* s, const char *dmx_devname,$/;"	f	file:
 setup_switch	diseqc.c	/^int setup_switch (int frontend_fd, int switch_pos, int voltage_18, int hiband)$/;"	f
 short_name0	atsc_psip_section.h	/^		u16 short_name0               :16;$/;"	m	struct:tvct_channel
@@ -266,6 +265,7 @@ short_name4	atsc_psip_section.h	/^		u16 short_name4               :16;$/;"	m	str
 short_name5	atsc_psip_section.h	/^		u16 short_name5               :16;$/;"	m	struct:tvct_channel
 short_name6	atsc_psip_section.h	/^		u16 short_name6               :16;$/;"	m	struct:tvct_channel
 show_existing_tuning_data_files	scan.c	/^static void show_existing_tuning_data_files(void)$/;"	f	file:
+snr_dB	scan.c	/^	int snr_dB;$/;"	m	struct:channel_info	file:
 source_id	atsc_psip_section.h	/^		u16 source_id                 :16;$/;"	m	struct:tvct_channel
 spectral_inversion	scan.c	/^static enum fe_spectral_inversion spectral_inversion = INVERSION_AUTO;$/;"	v	typeref:enum:fe_spectral_inversion	file:
 standard_desc	lnb.c	/^static char *standard_desc[] = {$/;"	v	file:
@@ -273,13 +273,6 @@ start_filter	scan.c	/^static int start_filter (struct section_buf* s)$/;"	f	file
 start_time	scan.c	/^	time_t start_time;$/;"	m	struct:section_buf	file:
 stop_filter	scan.c	/^static void stop_filter (struct section_buf *s)$/;"	f	file:
 str	scan.c	/^	const char *str;$/;"	m	struct:strtab	file:
-str2bandwidth	scan.c	/^static enum fe_bandwidth str2bandwidth(const char *bw)$/;"	f	file:
-str2enum	scan.c	/^static int str2enum(const char *str, const struct strtab *tab, int deflt)$/;"	f	file:
-str2fec	scan.c	/^static enum fe_code_rate str2fec(const char *fec)$/;"	f	file:
-str2guard	scan.c	/^static enum fe_guard_interval str2guard(const char *guard)$/;"	f	file:
-str2hier	scan.c	/^static enum fe_hierarchy str2hier(const char *hier)$/;"	f	file:
-str2mode	scan.c	/^static enum fe_transmit_mode str2mode(const char *mode)$/;"	f	file:
-str2qam	scan.c	/^static enum fe_modulation str2qam(const char *qam)$/;"	f	file:
 stream_type	atsc_psip_section.h	/^		u8  stream_type               : 8;$/;"	m	struct:ATSC_service_location_element
 strtab	scan.c	/^struct strtab {$/;"	s	file:
 subtitling_pid	scan.c	/^	uint16_t subtitling_pid;$/;"	m	struct:service	file:
@@ -294,7 +287,7 @@ timeout	scan.c	/^	time_t timeout;$/;"	m	struct:section_buf	file:
 transponder	scan.c	/^struct transponder {$/;"	s	file:
 transport_stream_id	scan.c	/^	int transport_stream_id;$/;"	m	struct:service	file:
 transport_stream_id	scan.c	/^	int transport_stream_id;$/;"	m	struct:transponder	file:
-tune_initial	scan.c	/^static int tune_initial (int frontend_fd, const char *initial)$/;"	f	file:
+tune_initial	scan.c	/^static int tune_initial (int frontend_fd)$/;"	f	file:
 tune_to_next_transponder	scan.c	/^static int tune_to_next_transponder (int frontend_fd)$/;"	f	file:
 tune_to_transponder	scan.c	/^static int tune_to_transponder (int frontend_fd, struct transponder *t)$/;"	f	file:
 tvct_channel	atsc_psip_section.h	/^struct tvct_channel {$/;"	s
@@ -304,20 +297,24 @@ type	section_generate.pl	/^sub type$/;"	s
 u16	section.h	7;"	d
 u32	section.h	8;"	d
 u8	section.h	6;"	d
-unique_anon_services	scan.c	/^static int unique_anon_services;$/;"	v	file:
+uncorrected_blks	scan.c	/^	int uncorrected_blks;$/;"	m	struct:channel_info	file:
 univ_desc	lnb.c	/^static char *univ_desc[] = {$/;"	v	file:
 update_poll_fds	scan.c	/^static void update_poll_fds(void)$/;"	f	file:
 usage	scan.c	/^static const char *usage = "\\n"$/;"	v	file:
 val	scan.c	/^	int val;$/;"	m	struct:strtab	file:
-vdr_dump_channum	scan.c	/^static int vdr_dump_channum;$/;"	v	file:
+vc	scan.c	/^	struct virtual_channels *vc; $/;"	m	struct:channel_info	typeref:struct:channel_info::virtual_channels	file:
+vchan_audio_pid	scan.c	/^	int vchan_audio_pid;$/;"	m	struct:virtual_channels	file:
+vchan_major_num	scan.c	/^	int vchan_major_num; $/;"	m	struct:virtual_channels	file:
+vchan_minor_num	scan.c	/^	int vchan_minor_num;$/;"	m	struct:virtual_channels	file:
+vchan_name	scan.c	/^	char vchan_name[50];$/;"	m	struct:virtual_channels	file:
+vchan_video_pid	scan.c	/^	int vchan_video_pid;$/;"	m	struct:virtual_channels	file:
 vdr_dump_dvb_parameters	dump-vdr.c	/^void vdr_dump_dvb_parameters (FILE *f, fe_type_t type,$/;"	f
-vdr_dump_provider	scan.c	/^static int vdr_dump_provider;$/;"	v	file:
 vdr_dump_service_parameter_set	dump-vdr.c	/^void vdr_dump_service_parameter_set (FILE *f,$/;"	f
-vdr_version	scan.c	/^static int vdr_version = 3;$/;"	v	file:
 verbose	scan.h	23;"	d
 verbosedebug	scan.h	26;"	d
 verbosity	scan.c	/^int verbosity = 2;$/;"	v
 video_pid	scan.c	/^	uint16_t video_pid;$/;"	m	struct:service	file:
+virtual_channels	scan.c	/^struct virtual_channels {$/;"	s	file:
 wait	diseqc.h	/^	uint32_t wait;$/;"	m	struct:diseqc_cmd
 warning	scan.h	21;"	d
 we_flag	scan.c	/^	unsigned int we_flag		  : 1;	\/* West\/East Flag - only for DVB-S *\/$/;"	m	struct:transponder	file:

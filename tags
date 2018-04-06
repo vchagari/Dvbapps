@@ -228,7 +228,7 @@ CW	util/alevt/font.h	17;"	d
 D	util/alevt/exp-gfx.c	167;"	d	file:
 D	util/alevt/exp-html.c	37;"	d	file:
 D	util/alevt/exp-txt.c	58;"	d	file:
-DATADIR	util/scan/scan.c	2492;"	d	file:
+DATADIR	util/scan/scan.c	2280;"	d	file:
 DATA_TYPE_ATSC	test/libucsi/testucsi.c	62;"	d	file:
 DATA_TYPE_DVB	test/libucsi/testucsi.c	61;"	d	file:
 DATA_TYPE_MPEG	test/libucsi/testucsi.c	60;"	d	file:
@@ -1085,7 +1085,7 @@ MAX_NUM_EVENTS_PER_CHANNEL	util/atsc_epg/atsc_epg.c	47;"	d	file:
 MAX_NUM_EVENT_TABLES	util/atsc_epg/atsc_epg.c	43;"	d	file:
 MAX_PES_SIZE	test/test_pes.c	37;"	d	file:
 MAX_PES_SIZE	test/test_tt.c	38;"	d	file:
-MAX_RUNNING	util/scan/scan.c	1665;"	d	file:
+MAX_RUNNING	util/scan/scan.c	1674;"	d	file:
 MAX_SECTION_SIZE	test/test_sec_ne.c	36;"	d	file:
 MAX_SECTION_SIZE	test/test_sections.c	36;"	d	file:
 MAX_SEC_CMD_LEN	lib/libdvbsec/dvbsec_api.h	124;"	d
@@ -2236,6 +2236,7 @@ atsc_caption_service_descriptor_entries_for_each	lib/libucsi/atsc/caption_servic
 atsc_caption_service_descriptor_entries_next	lib/libucsi/atsc/caption_service_descriptor.h	/^	atsc_caption_service_descriptor_entries_next(struct atsc_caption_service_descriptor *d,$/;"	f
 atsc_caption_service_entry	lib/libucsi/atsc/caption_service_descriptor.h	/^struct atsc_caption_service_entry {$/;"	s
 atsc_caption_service_location_element	lib/libucsi/atsc/service_location_descriptor.h	/^struct atsc_caption_service_location_element {$/;"	s
+atsc_chan_to_mhz	util/scan/scan.c	/^static int atsc_chan_to_mhz(int chan)$/;"	f	file:
 atsc_channel_info	util/atsc_epg/atsc_epg.c	/^struct atsc_channel_info {$/;"	s	file:
 atsc_component_name_descriptor	lib/libucsi/atsc/component_name_descriptor.h	/^struct atsc_component_name_descriptor {$/;"	s
 atsc_component_name_descriptor_codec	lib/libucsi/atsc/component_name_descriptor.h	/^	atsc_component_name_descriptor_codec(struct descriptor* d)$/;"	f
@@ -2527,7 +2528,6 @@ bandwidth	lib/libdvbapi/dvbfe.h	/^			enum dvbfe_dvbt_bandwidth	bandwidth;$/;"	m	
 bare	util/alevt/exp-html.c	/^  u8 bare;$/;"	m	struct:html_data	file:
 base	include/dmx.h	/^	unsigned int base;	\/* output: divisor for stc to get 90 kHz clock *\/$/;"	m	struct:dmx_stc
 bbc_channel_number	util/dvbscan/dvbscan.h	/^	int bbc_channel_number;$/;"	m	struct:service
-bcd32_to_cpu	util/scan/scan.c	/^static long bcd32_to_cpu (const int b0, const int b1, const int b2, const int b3)$/;"	f	file:
 bcd_to_integer	lib/libucsi/dvb/types.c	/^uint32_t bcd_to_integer(uint32_t bcdval)$/;"	f
 ber	lib/libdvbapi/dvbfe.h	/^	uint32_t ber;				\/* DVBFE_INFO_BER *\/$/;"	m	struct:dvbfe_info
 ber	util/dib3000-watch/dib3000-watch.h	/^	double ber;$/;"	m	struct:dib3000mb_monitoring
@@ -2627,7 +2627,6 @@ ca_resource	lib/libdvben50221/en50221_stdcam.h	/^	struct en50221_app_ca *ca_reso
 ca_resource	test/libdvben50221/test-app.c	/^struct en50221_app_ca *ca_resource;$/;"	v	typeref:struct:en50221_app_ca
 ca_resource_connected	util/gnutv/gnutv_ca.c	/^static int ca_resource_connected = 0;$/;"	v	file:
 ca_resource_connected	util/zap/zap_ca.c	/^static int ca_resource_connected = 0;$/;"	v	file:
-ca_select	util/scan/scan.c	/^static int ca_select = -1;$/;"	v	file:
 ca_session_number	lib/libdvben50221/en50221_stdcam.h	/^	int ca_session_number;$/;"	m	struct:en50221_stdcam
 ca_session_number	test/libdvben50221/test-app.c	/^int ca_session_number = 0;$/;"	v
 ca_slot_info	include/ca.h	/^typedef struct ca_slot_info {$/;"	s
@@ -3270,7 +3269,6 @@ dtag_mpeg_video_window	lib/libucsi/mpeg/descriptor.h	/^	dtag_mpeg_video_window		
 dts_next_au	lib/libucsi/transport_packet.h	/^	uint64_t dts_next_au;$/;"	m	struct:transport_values
 dummy	util/alevt/export.h	/^    struct { int dummy; } data[0];$/;"	m	struct:export::__anon48
 dump_dvb_parameters	util/scan/scan.c	/^static void dump_dvb_parameters (FILE *f, struct transponder *t)$/;"	f	file:
-dump_lists	util/scan/scan.c	/^static void dump_lists (void)$/;"	f	file:
 duration	lib/libucsi/dvb/eit_section.h	/^	dvbduration_t duration;$/;"	m	struct:dvb_eit_event
 dvb_ac3_descriptor	lib/libucsi/dvb/ac3_descriptor.h	/^struct dvb_ac3_descriptor {$/;"	s
 dvb_ac3_descriptor_additional_info	lib/libucsi/dvb/ac3_descriptor.h	/^static inline uint8_t *dvb_ac3_descriptor_additional_info(struct dvb_ac3_descriptor *d)$/;"	f
@@ -4471,7 +4469,6 @@ fec_list	util/szap/czap.c	/^static const Param fec_list[] = {$/;"	v	file:
 fec_list	util/szap/tzap.c	/^static const Param fec_list [] = {$/;"	v	file:
 fec_name	util/scan/dump-vdr.c	/^static const char *fec_name [] = {$/;"	v	file:
 fec_name	util/scan/dump-zap.c	/^static const char *fec_name [] = {$/;"	v	file:
-fec_tab	util/scan/scan.c	/^static const fe_code_rate_t fec_tab [8] = {$/;"	v	file:
 feedtype	include/net.h	/^	__u8  feedtype;$/;"	m	struct:dvb_net_if
 feinfo	test/libucsi/testucsi.c	/^struct dvbfe_info feinfo;$/;"	v	typeref:struct:dvbfe_info
 feparams	lib/libdvbapi/dvbfe.h	/^	struct dvbfe_parameters feparams;	\/* DVBFE_INFO_FEPARAMS *\/$/;"	m	struct:dvbfe_info	typeref:struct:dvbfe_info::dvbfe_parameters
@@ -4584,7 +4581,6 @@ get_front	test/test_switch.c	/^get_front(void)$/;"	f
 get_frontend_entry	util/lsdvb/lsdvb.c	/^int get_frontend_entry(DIR *dvb_dir, char *frontend_dev)$/;"	f
 get_frontend_info	util/lsdvb/lsdvb.c	/^int get_frontend_info(int adapter, char *frontend)$/;"	f
 get_next_buffer	lib/libdvben50221/en50221_app_lowspeed.h	/^		} get_next_buffer;$/;"	m	union:en50221_app_lowspeed_command::__anon41	typeref:struct:en50221_app_lowspeed_command::__anon41::__anon45
-get_other_nits	util/scan/scan.c	/^static int get_other_nits;$/;"	v	file:
 get_pmt_pid	test/szap2.c	/^int get_pmt_pid(char *dmxdev, int sid)$/;"	f
 get_pmt_pid	util/szap/util.c	/^int get_pmt_pid(char *dmxdev, int sid)$/;"	f
 get_property	util/szap/util.c	/^int get_property(int fd, uint32_t pcmd, uint32_t *len, uint8_t *data)$/;"	f
@@ -4649,7 +4645,6 @@ hamm24val	util/alevt/hamm.c	/^static char hamm24val[256] =$/;"	v	file:
 hamm8	util/alevt/hamm.c	/^int hamm8(u8 *p, int *err)$/;"	f
 hammtab	util/alevt/hamm.c	/^static unsigned short hammtab[256] =$/;"	v	file:
 handle_event	util/alevt/xio.c	/^static void handle_event(struct xio *xio, int fd)$/;"	f	file:
-handle_sigint	util/scan/scan.c	/^static void handle_sigint(int sig)$/;"	f	file:
 handler	util/alevt/fdset.h	/^    void (*handler)(void *data, int fd);$/;"	m	struct:fdset_node
 handler	util/alevt/vbi.h	/^    void (*handler)(void *data, struct vt_event *ev);$/;"	m	struct:vbi_client
 handler	util/alevt/xio.h	/^    void (*handler)(void *data, struct vt_event *ev); \/* event-handler *\/$/;"	m	struct:xio_win
@@ -5555,7 +5550,6 @@ parse_atsc_ext_chan_name_desc	util/scan/scan.c	/^static void parse_atsc_ext_chan
 parse_atsc_section	test/libucsi/testucsi.c	/^void parse_atsc_section(uint8_t *buf, int len, int pid, int data_type, struct section *section)$/;"	f
 parse_atsc_service_loc_desc	util/scan/scan.c	/^static void parse_atsc_service_loc_desc(struct service *s,const unsigned char *buf)$/;"	f	file:
 parse_ca_identifier_descriptor	util/scan/scan.c	/^static void parse_ca_identifier_descriptor (const unsigned char *buf,$/;"	f	file:
-parse_cable_delivery_system_descriptor	util/scan/scan.c	/^static void parse_cable_delivery_system_descriptor (const unsigned char *buf,$/;"	f	file:
 parse_descriptor	test/libucsi/testucsi.c	/^void parse_descriptor(struct descriptor *d, int indent, int data_type)$/;"	f
 parse_descriptors	util/scan/scan.c	/^static void parse_descriptors(enum table_type t, const unsigned char *buf,$/;"	f	file:
 parse_dvb_descriptor	test/libucsi/testucsi.c	/^void parse_dvb_descriptor(struct descriptor *d, int indent, int data_type)$/;"	f
@@ -5581,15 +5575,12 @@ parse_pmt	util/scan/scan.c	/^static void parse_pmt (const unsigned char *buf, in
 parse_psip_descriptors	util/scan/scan.c	/^static void parse_psip_descriptors(struct service *s,const unsigned char *buf,int len)$/;"	f	file:
 parse_psip_vct	util/scan/scan.c	/^static void parse_psip_vct (const unsigned char *buf, int section_length,$/;"	f	file:
 parse_rrt	util/atsc_epg/atsc_epg.c	/^static int parse_rrt(int dmxfd)$/;"	f	file:
-parse_satellite_delivery_system_descriptor	util/scan/scan.c	/^static void parse_satellite_delivery_system_descriptor (const unsigned char *buf,$/;"	f	file:
 parse_sdt	util/scan/scan.c	/^static void parse_sdt (const unsigned char *buf, int section_length,$/;"	f	file:
 parse_section	test/libucsi/testucsi.c	/^void parse_section(uint8_t *buf, int len, int pid, int data_type)$/;"	f
 parse_section	util/scan/scan.c	/^static int parse_section (struct section_buf *s)$/;"	f	file:
 parse_service_descriptor	util/scan/scan.c	/^static void parse_service_descriptor (const unsigned char *buf, struct service *s)$/;"	f	file:
 parse_stt	util/atsc_epg/atsc_epg.c	/^static int parse_stt(int dmxfd)$/;"	f	file:
 parse_switch	lib/libdvbsec/dvbsec_api.c	/^static enum dvbsec_diseqc_switch parse_switch(int c)$/;"	f	file:
-parse_terrestrial_delivery_system_descriptor	util/scan/scan.c	/^static void parse_terrestrial_delivery_system_descriptor (const unsigned char *buf,$/;"	f	file:
-parse_terrestrial_uk_channel_number	util/scan/scan.c	/^static void parse_terrestrial_uk_channel_number (const unsigned char *buf, void *dummy)$/;"	f	file:
 parse_tvct	util/atsc_epg/atsc_epg.c	/^static int parse_tvct(int dmxfd)$/;"	f	file:
 parsechararg	lib/libdvbsec/dvbsec_api.c	/^static int parsechararg(char **args, char *argsend, int *result)$/;"	f	file:
 parsefloatarg	lib/libdvbsec/dvbsec_api.c	/^static int parsefloatarg(char **args, char *argsend, float *result)$/;"	f	file:
@@ -5631,7 +5622,6 @@ pid_fd	util/gnutv/gnutv_data.c	/^struct pid_fd {$/;"	s	file:
 pid_fds	util/gnutv/gnutv_data.c	/^static struct pid_fd *pid_fds = NULL;$/;"	v	typeref:struct:pid_fd	file:
 pid_fds_count	util/gnutv/gnutv_data.c	/^static int pid_fds_count = 0;$/;"	v	file:
 pid_lo	lib/libucsi/transport_packet.h	/^	uint8_t pid_lo;$/;"	m	struct:transport_packet
-pids_dump_service_parameter_set	util/scan/scan.c	/^static void pids_dump_service_parameter_set(FILE *f, struct service *s)$/;"	f	file:
 pidt	util/dvbtraffic/dvbtraffic.c	/^static int pidt[0x2001];$/;"	v	file:
 piecewise_rate	lib/libucsi/transport_packet.h	/^	uint32_t piecewise_rate;$/;"	m	struct:transport_values
 pixel_depths	lib/libdvben50221/en50221_app_mmi.h	/^			struct en50221_app_mmi_pixel_depth *pixel_depths;$/;"	m	struct:en50221_app_mmi_display_reply_details::__anon37::__anon38	typeref:struct:en50221_app_mmi_display_reply_details::__anon37::__anon38::en50221_app_mmi_pixel_depth
@@ -5729,7 +5719,6 @@ put_menu_line	util/alevt/ui.c	/^static void put_menu_line(struct vtwin *w)$/;"	f
 qam	include/frontend.h	/^		struct dvb_qam_parameters  qam;$/;"	m	union:dvb_frontend_parameters::__anon55	typeref:struct:dvb_frontend_parameters::__anon55::dvb_qam_parameters
 qam_name	util/scan/dump-vdr.c	/^static const char *qam_name [] = {$/;"	v	file:
 qam_name	util/scan/dump-zap.c	/^static const char *qam_name [] = {$/;"	v	file:
-qam_tab	util/scan/scan.c	/^static const fe_modulation_t qam_tab [6] = {$/;"	v	file:
 qpsk	include/frontend.h	/^		struct dvb_qpsk_parameters qpsk;$/;"	m	union:dvb_frontend_parameters::__anon55	typeref:struct:dvb_frontend_parameters::__anon55::dvb_qpsk_parameters
 queryInterface	util/dvbnet/dvbnet.c	/^void queryInterface(int fd_net)$/;"	f
 query_page	util/alevt/ui.c	/^static void query_page(struct vtwin *w, int pgno, int subno)$/;"	f	file:
@@ -5831,10 +5820,8 @@ sat_polarisation	util/scan/scan.c	/^static char sat_polarisation (struct transpo
 scan_done	util/scan/scan.c	/^	unsigned int scan_done		  : 1;$/;"	m	struct:transponder	file:
 scan_file_av	test/test_av_play.c	/^static int scan_file_av(int vfd, int afd, const unsigned char *buf, int buflen)$/;"	f	file:
 scan_load_callback	util/dvbscan/dvbscan.c	/^static int scan_load_callback(struct dvbcfg_scanfile *channel, void *private_data)$/;"	f	file:
-scan_network	util/scan/scan.c	/^static void scan_network (int frontend_fd, const char *initial)$/;"	f	file:
-scan_tp	util/scan/scan.c	/^static void scan_tp(void)$/;"	f	file:
+scan_network	util/scan/scan.c	/^static void scan_network (int frontend_fd)$/;"	f	file:
 scan_tp_atsc	util/scan/scan.c	/^static void scan_tp_atsc(void)$/;"	f	file:
-scan_tp_dvb	util/scan/scan.c	/^static void scan_tp_dvb (void)$/;"	f	file:
 scan_weighting	lib/libucsi/dvb/rnt_rnt_scan_descriptor.h	/^	uint8_t scan_weighting;$/;"	m	struct:dvb_rnt_rnt_scan_entry
 scanned	util/dvbscan/dvbscan.c	/^static struct transponder *scanned = NULL;$/;"	v	typeref:struct:transponder	file:
 scanned_end	util/dvbscan/dvbscan.c	/^static struct transponder *scanned_end = NULL;$/;"	v	typeref:struct:transponder	file:
@@ -5931,7 +5918,6 @@ sendfuncs	lib/libdvben50221/en50221_stdcam_hlci.c	/^	struct en50221_app_send_fun
 sendfuncs	lib/libdvben50221/en50221_stdcam_llci.c	/^	struct en50221_app_send_functions sendfuncs;$/;"	m	struct:en50221_stdcam_llci	typeref:struct:en50221_stdcam_llci::en50221_app_send_functions	file:
 senf	test/test.c	/^senf()$/;"	f
 separator	util/atsc_epg/atsc_epg.c	/^static char separator[80];$/;"	v	file:
-serv_select	util/scan/scan.c	/^static int serv_select = 7;$/;"	v	file:
 service	util/dvbscan/dvbscan.h	/^struct service$/;"	s
 service	util/scan/scan.c	/^struct service {$/;"	s	file:
 service_id	lib/libdvbcfg/dvbcfg_zapchannel.h	/^	int service_id;$/;"	m	struct:dvbcfg_zapchannel
@@ -5974,7 +5960,7 @@ sessions	lib/libdvben50221/en50221_app_mmi.c	/^	struct en50221_app_mmi_session *
 sessions	lib/libdvben50221/en50221_session.c	/^	struct en50221_session *sessions;$/;"	m	struct:en50221_session_layer	typeref:struct:en50221_session_layer::en50221_session	file:
 set_apid	test/test_switch.c	/^set_apid(ushort apid)$/;"	f
 set_bit	util/scan/scan.c	/^static void set_bit (uint8_t *bitfield, int bit)$/;"	f	file:
-set_delivery_system	util/scan/scan.c	/^static int set_delivery_system(int fd, unsigned type)$/;"	f	file:
+set_delivery_system	util/scan/scan.c	/^static int set_delivery_system(int fd)$/;"	f	file:
 set_demux	test/szap2.c	/^static int set_demux(int dmxfd, int pid, int pes_type, int dvr)$/;"	f	file:
 set_diseqc_nb	test/test_switch.c	/^set_diseqc_nb(int nr)$/;"	f
 set_filter	test/test_pes.c	/^int set_filter(int fd, unsigned int pid)$/;"	f
@@ -6134,13 +6120,6 @@ stdcam	util/zap/zap_ca.c	/^static struct en50221_stdcam *stdcam = NULL;$/;"	v	ty
 stop	include/video.h	/^		} stop;$/;"	m	union:video_command::__anon67	typeref:struct:video_command::__anon67::__anon68
 stop_filter	util/scan/scan.c	/^static void stop_filter (struct section_buf *s)$/;"	f	file:
 str	util/scan/scan.c	/^	const char *str;$/;"	m	struct:strtab	file:
-str2bandwidth	util/scan/scan.c	/^static enum fe_bandwidth str2bandwidth(const char *bw)$/;"	f	file:
-str2enum	util/scan/scan.c	/^static int str2enum(const char *str, const struct strtab *tab, int deflt)$/;"	f	file:
-str2fec	util/scan/scan.c	/^static enum fe_code_rate str2fec(const char *fec)$/;"	f	file:
-str2guard	util/scan/scan.c	/^static enum fe_guard_interval str2guard(const char *guard)$/;"	f	file:
-str2hier	util/scan/scan.c	/^static enum fe_hierarchy str2hier(const char *hier)$/;"	f	file:
-str2mode	util/scan/scan.c	/^static enum fe_transmit_mode str2mode(const char *mode)$/;"	f	file:
-str2qam	util/scan/scan.c	/^static enum fe_modulation str2qam(const char *qam)$/;"	f	file:
 stream	util/dvbscan/dvbscan.h	/^struct stream$/;"	s
 stream_count	lib/libucsi/mpeg/odsmt_section.h	/^	uint8_t stream_count;$/;"	m	struct:mpeg_odsmt_section
 stream_id	include/video.h	/^	int stream_id;$/;"	m	struct:video_spu
@@ -6373,7 +6352,7 @@ ttpid	util/alevt/main.c	/^static int ttpid = -1;$/;"	v	file:
 ttpid	util/alevt/vbi.h	/^    unsigned int ttpid;$/;"	m	struct:vbi
 tune_callback	lib/libdvben50221/en50221_app_dvb.c	/^	en50221_app_dvb_tune_callback tune_callback;$/;"	m	struct:en50221_app_dvb	file:
 tune_callback_arg	lib/libdvben50221/en50221_app_dvb.c	/^	void *tune_callback_arg;$/;"	m	struct:en50221_app_dvb	file:
-tune_initial	util/scan/scan.c	/^static int tune_initial (int frontend_fd, const char *initial)$/;"	f	file:
+tune_initial	util/scan/scan.c	/^static int tune_initial (int frontend_fd)$/;"	f	file:
 tune_it	test/test_switch.c	/^int tune_it(FrontendParameters *frp)$/;"	f
 tune_state	util/gnutv/gnutv_dvb.c	/^static int tune_state = 0;$/;"	v	file:
 tune_to	test/lock_s.c	/^static int tune_to(int fd, struct sec_params *sec)$/;"	f	file:
@@ -6419,7 +6398,6 @@ ui_line	util/gnutv/gnutv_ca.c	/^char ui_line[256];$/;"	v
 ui_linepos	util/gnutv/gnutv_ca.c	/^uint32_t ui_linepos = 0;$/;"	v
 unc	util/dib3000-watch/dib3000-watch.h	/^	int unc;$/;"	m	struct:dib3000mb_monitoring
 unicode_decode	lib/libucsi/atsc/atsc_text.c	/^static inline int unicode_decode(uint8_t *srcbuf, size_t srcbuflen, int mode,$/;"	f	file:
-unique_anon_services	util/scan/scan.c	/^static int unique_anon_services;$/;"	v	file:
 univ_desc	test/lnb.c	/^static char *univ_desc[] = {$/;"	v	file:
 univ_desc	test/lock_s.c	/^static char *univ_desc[] = {$/;"	v	file:
 univ_desc	util/scan/lnb.c	/^static char *univ_desc[] = {$/;"	v	file:
@@ -6496,11 +6474,8 @@ vbi_query_page	util/alevt/vbi.c	/^struct vt_page * vbi_query_page(struct vbi *vb
 vbi_reset	util/alevt/vbi.c	/^void vbi_reset(struct vbi *vbi)$/;"	f
 vbi_send	util/alevt/vbi.c	/^static void vbi_send(struct vbi *vbi, int type, int i1, int i2, int i3, void *p1)$/;"	f	file:
 vbi_send_page	util/alevt/vbi.c	/^static void vbi_send_page(struct vbi *vbi, struct raw_page *rvtp, int page)$/;"	f	file:
-vdr_dump_channum	util/scan/scan.c	/^static int vdr_dump_channum;$/;"	v	file:
 vdr_dump_dvb_parameters	util/scan/dump-vdr.c	/^void vdr_dump_dvb_parameters (FILE *f, fe_type_t type,$/;"	f
-vdr_dump_provider	util/scan/scan.c	/^static int vdr_dump_provider;$/;"	v	file:
 vdr_dump_service_parameter_set	util/scan/dump-vdr.c	/^void vdr_dump_service_parameter_set (FILE *f,$/;"	f
-vdr_version	util/scan/scan.c	/^static int vdr_version = 3;$/;"	v	file:
 verb	util/dib3000-watch/dib3000-watch.h	5;"	d
 verbose	lib/libdvbapi/dvbfe.c	/^int verbose = 0;$/;"	v
 verbose	util/scan/scan.h	23;"	d

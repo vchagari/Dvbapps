@@ -193,7 +193,7 @@ static int monitor_frontend (int fe_fd, int dvr, int human_readable)
 			printf ("status %02x | signal %3u%% | snr %3u%% | ber %d | unc %d | ",
 				status, (signal * 100) / 0xffff, (snr * 100) / 0xffff, ber, uncorrected_blocks);
 		} else {
-			printf ("status %02x | signal %04x | snr %04x | ber %08x | unc %08x | ",
+			printf ("status %02x | signal %04x | snr %04x | ber %08x | unc %08x | \n",
 				status, signal, snr, ber, uncorrected_blocks);
 		}
 
