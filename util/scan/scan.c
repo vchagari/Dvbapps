@@ -63,7 +63,7 @@ static int ATSC_type=1;
 static int save_channel_info = 1; 
 //static int get_other_nits;
 //static int vdr_dump_provider;
-//static int vdr_dump_channum;
+static int vdr_dump_channum;
 //static int ca_select = -1;
 //static int serv_select = 7;
 //static int vdr_version = 3;
@@ -73,6 +73,7 @@ static struct lnb_types_st lnb_type;
 
 static int rf_chan; 
 static int fe_fd; 
+static char *description = "Home"; 
 
 char *default_charset = "ISO-6937";
 char *output_charset;
@@ -190,8 +191,8 @@ struct channel_info {
 	int chan_num;
 	int chan_freq;
 	int lock_status;
-	int rssi_dBm;
-	int snr_dB;
+	int16_t rssi_dBm;
+	uint16_t snr_dB;
 	int ber;
 	int uncorrected_blks;
 	int num_vchans;
@@ -218,7 +219,7 @@ static int atsc_chan_to_mhz(int chan);
 static int atsc_mhz_to_chan(int freq_mhz); 
 static void cleanup(void);
 static void print_struct_buffers(void);
-
+static void save_channel_info_file(FILE *fd);
 
 /* According to the DVB standards, the combination of network_id and
  * transport_stream_id should be unique, but in real life the satellite
@@ -384,7 +385,7 @@ static void parse_network_name_descriptor (const unsigned char *buf, void *dummy
 }
 
 //CHECK
-#if 0
+//#if 0
 static void parse_terrestrial_uk_channel_number (const unsigned char *buf, void *dummy)
 {
 	(void)dummy;
@@ -416,9 +417,9 @@ static void parse_terrestrial_uk_channel_number (const unsigned char *buf, void 
 		buf += 4;
 	}
 }
-#endif 
+//#endif 
 
-#if 0
+//#if 0
 
 static long bcd32_to_cpu (const int b0, const int b1, const int b2, const int b3)
 {
@@ -559,7 +560,7 @@ static void parse_terrestrial_delivery_system_descriptor (const unsigned char *b
 		dprintf(5, "\n");
 	}
 }
-#endif 
+//#endif 
 
 static void parse_frequency_list_descriptor (const unsigned char *buf,
 				      struct transponder *t)
@@ -1092,12 +1093,12 @@ static void parse_descriptors(enum table_type t, const unsigned char *buf,
 
 		case 0x43:
 			if (t == NIT)
-				//parse_satellite_delivery_system_descriptor (buf, data);
+				parse_satellite_delivery_system_descriptor (buf, data);
 			break; 
 
 		case 0x44:
 			if (t == NIT)
-				//parse_cable_delivery_system_descriptor (buf, data);
+				parse_cable_delivery_system_descriptor (buf, data);
 			break;
 
 		case 0x48:
@@ -1112,7 +1113,7 @@ static void parse_descriptors(enum table_type t, const unsigned char *buf,
 
 		case 0x5a:
 			if (t == NIT)
-				//parse_terrestrial_delivery_system_descriptor (buf, data);
+				parse_terrestrial_delivery_system_descriptor (buf, data);
 			break;
 
 		case 0x62:
@@ -1124,8 +1125,8 @@ static void parse_descriptors(enum table_type t, const unsigned char *buf,
 			/* 0x83 is in the privately defined range of descriptor tags,
 			 * so we parse this only if the user says so to avoid
 			 * problems when 0x83 is something entirely different... */
-			//if (t == NIT && vdr_dump_channum)
-			//	parse_terrestrial_uk_channel_number (buf, data);
+			if (t == NIT && vdr_dump_channum)
+				parse_terrestrial_uk_channel_number (buf, data);
 			break;
 		
 		default:
@@ -1465,7 +1466,8 @@ static void parse_psip_vct (const unsigned char *buf, int section_length,
 	int i;
 	int pseudo_id = 0xffff;
 	unsigned char *b = (unsigned char *) buf + 2;
-	uint16_t snr, signal;
+	uint16_t snr;
+	int16_t signal;
 	uint32_t ber, uncorrected_blocks;
 	fe_status_t status;
 	int idx = rf_chan - 2;
@@ -1542,7 +1544,7 @@ static void parse_psip_vct (const unsigned char *buf, int section_length,
 			
 				pchan_info[idx].chan_num = rf_chan;
 				pchan_info[idx].chan_freq = atsc_chan_to_mhz(rf_chan);
-				pchan_info[idx].snr_dB = snr;
+				pchan_info[idx].snr_dB =   snr;
 				pchan_info[idx].rssi_dBm = signal;
 				pchan_info[idx].ber = ber;
 				pchan_info[idx].uncorrected_blks = uncorrected_blocks;
@@ -1551,8 +1553,8 @@ static void parse_psip_vct (const unsigned char *buf, int section_length,
 				
 				if ( status & FE_HAS_LOCK) {
 					pchan_info[idx].lock_status = 1; 	
-					info("status %02x | signal %04x | snr %04x | ber %08x | unc %08x | ", 
-					status, signal, snr, ber, uncorrected_blocks);
+					info("status %d | signal %d %04x | snr %d | ber %08x | unc %08x | ", 
+					status, signal, signal, snr, ber, uncorrected_blocks);
 				}
 			}
 
@@ -2059,8 +2061,8 @@ static int tune_to_transponder (int frontend_fd, struct transponder *t)
 	}
 
 //	printf("\ntune_to_transponder\n");
-	//if (__tune_to_transponder (frontend_fd, t) == 0)
-	//	return 0;
+	if (__tune_to_transponder (frontend_fd, t) == 0)
+		return 0;
 
 	return __tune_to_transponder (frontend_fd, t);
 }
@@ -2144,8 +2146,8 @@ static int tune_initial (int frontend_fd)
 		t->param.u.vsb.modulation = VSB_8;
 	}
 
-	//return tune_to_next_transponder(frontend_fd);
-	return 0; 
+	return tune_to_next_transponder(frontend_fd);
+	//return 0; 
 }
 
 static int atsc_chan_to_mhz(int chan)
@@ -2500,7 +2502,8 @@ int main (int argc, char **argv)
 	int frontend_fd;
 	int fe_open_mode;
 	char *charset;
-	
+	FILE * chinfo_fd;
+
 	/*
 	 * Get the environment charset, and use it as the default
 	 * output charset. In thesis, using nl_langinfo should be
@@ -2592,11 +2595,10 @@ int main (int argc, char **argv)
 			if (--verbosity < 0)
 				verbosity = 0;
 			break;
-
+#endif
 		case 'u':
 			vdr_dump_channum = 1;
-			break;
-#endif 
+			break; 
 		case 'P':
 			no_ATSC_PSIP = 1;
 			break;
@@ -2665,7 +2667,17 @@ int main (int argc, char **argv)
 		spectral_inversion = INVERSION_OFF;
 	}	
 
-	if (save_channel_info) {
+	if (save_channel_info) {	
+
+		char str[50] = {0}; 
+
+		sprintf(str, "%s_%s_%s.txt", __DATE__, __TIME__, description); 
+
+		chinfo_fd = fopen((const char *) str, "w+");
+		if (chinfo_fd == NULL) {
+			printf("\n Unable to open a file: chinfo_fd \n");
+			return -1; 
+		}	
 
 		pchan_info = (struct channel_info *) calloc( 50, sizeof(struct channel_info)); 
 		
@@ -2690,18 +2702,75 @@ int main (int argc, char **argv)
 		scan_network (frontend_fd);
 	}
 
-	close (frontend_fd);
-
 	//dump_lists();
 
-	print_struct_buffers();
+	if (save_channel_info) {
+		print_struct_buffers();
+		save_channel_info_file(chinfo_fd);
+	}
 
+	close (frontend_fd);
+	
 	cleanup();
 
 	return 0;
 }
 
-static void print_struct_buffers()
+static void save_channel_info_file(FILE *fd)
+{
+
+	int num_rf_chans = 0;
+	int num_virtual_chans = 0;
+
+	fprintf(fd, "%s %s\t\n",__DATE__, __TIME__);	
+	fprintf(fd, "%s\t\n", description);
+	fprintf(fd, "chan_num\tchan_Mhz\tlock_status\trssi[dBm]\tsnr[dB]\t");
+	
+	for (int i = 1; i < 17; ++i) {
+		fprintf(fd, "vchan%d_num\tvchan%d_name\tvchan%d_video_pid\tvchan%d_audio_pid\t",
+		i, i, i, i);
+	}
+
+	fprintf(fd, "\n");
+	
+	for (int j = 0; j < 50; ++j) {
+	
+		if (pchan_info[j].lock_status) {
+
+			++num_rf_chans; 
+
+			fprintf(fd, "%d\t%d\t%d\t%d\t%d\t",
+			pchan_info[j].chan_num,
+			pchan_info[j].chan_freq,
+			pchan_info[j].lock_status,
+			pchan_info[j].rssi_dBm,
+			pchan_info[j].snr_dB);
+
+			for (int z = 0; z < pchan_info[j].num_vchans; ++z) {
+			
+				++num_virtual_chans;
+
+				fprintf(fd, "%d.%d\t%s\t%d\t%d\t",
+				pchan_info[j].vc[z].vchan_major_num,
+				pchan_info[j].vc[z].vchan_minor_num,
+				pchan_info[j].vc[z].vchan_name,
+				pchan_info[j].vc[z].vchan_video_pid,
+				pchan_info[j].vc[z].vchan_audio_pid);
+					
+			}
+
+			fprintf(fd, "\n");
+		}
+	}
+
+	fprintf(fd, "Total Channels Locked\t%d RF channels\t%d Virtual channels\t\n",
+	num_rf_chans, num_virtual_chans);
+	
+	fclose(fd);
+
+}
+
+static void print_struct_buffers(void)
 {
 	int i;
 	
