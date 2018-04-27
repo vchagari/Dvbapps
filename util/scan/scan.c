@@ -60,20 +60,15 @@ static int long_timeout;
 static int current_tp_only;
 static int no_ATSC_PSIP;
 static int ATSC_type=1;
-static int save_channel_info = 1; 
-//static int get_other_nits;
-//static int vdr_dump_provider;
 static int vdr_dump_channum;
-//static int ca_select = -1;
-//static int serv_select = 7;
-//static int vdr_version = 3;
-//static int unique_anon_services;
+static int save_channel_info = 1; 
+static int scan_play_video = 1; 
 
 static struct lnb_types_st lnb_type;
 
 static int rf_chan; 
 static int fe_fd; 
-static char *description = "Home"; 
+static char description[25] = "Living room"; 
 
 char *default_charset = "ISO-6937";
 char *output_charset;
@@ -192,7 +187,7 @@ struct channel_info {
 	int chan_freq;
 	int lock_status;
 	int16_t rssi_dBm;
-	uint16_t snr_dB;
+	float snr_dB;
 	int ber;
 	int uncorrected_blks;
 	int num_vchans;
@@ -384,8 +379,6 @@ static void parse_network_name_descriptor (const unsigned char *buf, void *dummy
 	info("Network Name '%.*s'\n", len, buf + 2);
 }
 
-//CHECK
-//#if 0
 static void parse_terrestrial_uk_channel_number (const unsigned char *buf, void *dummy)
 {
 	(void)dummy;
@@ -417,9 +410,6 @@ static void parse_terrestrial_uk_channel_number (const unsigned char *buf, void 
 		buf += 4;
 	}
 }
-//#endif 
-
-//#if 0
 
 static long bcd32_to_cpu (const int b0, const int b1, const int b2, const int b3)
 {
@@ -560,7 +550,6 @@ static void parse_terrestrial_delivery_system_descriptor (const unsigned char *b
 		dprintf(5, "\n");
 	}
 }
-//#endif 
 
 static void parse_frequency_list_descriptor (const unsigned char *buf,
 				      struct transponder *t)
@@ -1544,8 +1533,8 @@ static void parse_psip_vct (const unsigned char *buf, int section_length,
 			
 				pchan_info[idx].chan_num = rf_chan;
 				pchan_info[idx].chan_freq = atsc_chan_to_mhz(rf_chan);
-				pchan_info[idx].snr_dB =   snr;
-				pchan_info[idx].rssi_dBm = signal;
+				pchan_info[idx].snr_dB = (float) (snr / 10);
+				pchan_info[idx].rssi_dBm = (int16_t) (signal / 100);
 				pchan_info[idx].ber = ber;
 				pchan_info[idx].uncorrected_blks = uncorrected_blocks;
 				pchan_info[idx].lock_status = 0;
@@ -1888,7 +1877,6 @@ static void remove_filter (struct section_buf *s)
 {
 	verbosedebug("remove filter pid 0x%04x\n", s->pid);
 	stop_filter (s);
-
 	while (!list_empty(&waiting_filters)) {
 		struct list_head *next = waiting_filters.next;
 		s = list_entry (next, struct section_buf, list);
@@ -1947,13 +1935,9 @@ static int switch_pos = 0;
 static int __tune_to_transponder (int frontend_fd, struct transponder *t)
 {
 	struct dvb_frontend_parameters p;
-//	uint16_t snr, signal;
-//	uint32_t ber, uncorrected_blocks;
 	fe_status_t s;
 	current_tp = t;
 	int i;
-
-//	printf("\n__tune_to_transponder\n");
 
 	if (mem_is_zero (&t->param, sizeof(struct dvb_frontend_parameters)))
 		return -1;
@@ -1985,32 +1969,8 @@ static int __tune_to_transponder (int frontend_fd, struct transponder *t)
 			return -1;
 		}
 
-#if 0
-		if (ioctl(frontend_fd, FE_READ_SIGNAL_STRENGTH, &signal) == -1)
-			signal = -2;
-		if (ioctl(frontend_fd, FE_READ_SNR, &snr) == -1)
-			snr = -2;
-		if (ioctl(frontend_fd, FE_READ_BER, &ber) == -1)
-			ber = -2;
-		if (ioctl(frontend_fd, FE_READ_UNCORRECTED_BLOCKS, &uncorrected_blocks) == -1)
-			uncorrected_blocks = -2;
-
-		verbose(">>> tuning status == 0x%02x\n", s);
-#endif 
-
 		if (s & FE_HAS_LOCK) {
 			t->last_tuning_failed = 0;
-#if 0
-			if ( (s & FE_HAS_SIGNAL) && (s & FE_HAS_CARRIER) && 
-			(s & FE_HAS_VITERBI) && (s & FE_HAS_SYNC)) { 	
-				printf("\nFrequency:%d\n",t->param.frequency);
-				printf("status %02x | signal %04x | snr %04x | ber %08x | unc %08x | ", s, signal, snr, ber, uncorrected_blocks);
-			}	
-
-			//system("vlc atsc://frequency=497000000");
-			//usleep(100000);
-			//system("killall vlc");
-#endif 
 			return 0;	
 		}
 	}
@@ -2060,7 +2020,6 @@ static int tune_to_transponder (int frontend_fd, struct transponder *t)
 		return -1;
 	}
 
-//	printf("\ntune_to_transponder\n");
 	if (__tune_to_transponder (frontend_fd, t) == 0)
 		return 0;
 
@@ -2075,7 +2034,7 @@ static int tune_to_next_transponder (int frontend_fd)
 	uint32_t freq;
 
 	list_for_each_safe(pos, tmp, &new_transponders) {
-//		printf("\nTune_to_next_transponder:Looping\n");
+		
 		t = list_entry (pos, struct transponder, list);
 retry:
 		if (tune_to_transponder (frontend_fd, t) == 0)
@@ -2192,8 +2151,6 @@ static void scan_tp_atsc(void)
 {
 	struct section_buf s0,s1,s2;
 
-//	printf("\nScan_tp_atsc\n");
-
 	if (no_ATSC_PSIP) {
 		setup_filter(&s0, demux_devname, 0x00, 0x00, -1, 1, 0, 5); /* PAT */
 		add_filter(&s0);
@@ -2211,27 +2168,10 @@ static void scan_tp_atsc(void)
 	}
 
 	do {
-		//printf("\nScan_tp_atsc looping\n");
 		read_filters ();
 	} while (!(list_empty(&running_filters) &&
 		   list_empty(&waiting_filters)));
 }
-
-#if 0
-static void scan_tp(void)
-{
-	switch(fe_info.type) {
-		case FE_QPSK:
-		case FE_QAM:
-		case FE_OFDM:
-		case FE_ATSC:
-			scan_tp_atsc();
-			break;
-		default:
-			break;
-	}
-}
-#endif 
 
 static void scan_network (int frontend_fd)
 {
@@ -2241,50 +2181,9 @@ static void scan_network (int frontend_fd)
 	}
 
 	do {
-		//printf("\nScan_network: In do while loop\n");
-		//scan_tp();
 		scan_tp_atsc();
 	} while (tune_to_next_transponder(frontend_fd) == 0);
 }
-
-
-#if 0
-static void pids_dump_service_parameter_set(FILE *f, struct service *s)
-{
-        int i;
-
-	fprintf(f, "%-24.24s (0x%04x) %02x: ", s->service_name, s->service_id, s->type);
-	if (!s->pcr_pid || (s->type > 2))
-		fprintf(f, "           ");
-	else if (s->pcr_pid == s->video_pid)
-		fprintf(f, "PCR == V   ");
-	else if ((s->audio_num == 1) && (s->pcr_pid == s->audio_pid[0]))
-		fprintf(f, "PCR == A   ");
-	else
-		fprintf(f, "PCR 0x%04x ", s->pcr_pid);
-	if (s->video_pid)
-		fprintf(f, "V 0x%04x", s->video_pid);
-	else
-		fprintf(f, "        ");
-	if (s->audio_num)
-		fprintf(f, " A");
-        for (i = 0; i < s->audio_num; i++) {
-		fprintf(f, " 0x%04x", s->audio_pid[i]);
-		if (s->audio_lang[i][0])
-			fprintf(f, " (%.3s)", s->audio_lang[i]);
-		else if (s->audio_num == 1)
-			fprintf(f, "      ");
-	}
-	if (s->teletext_pid)
-		fprintf(f, " TT 0x%04x", s->teletext_pid);
-	if (s->ac3_pid)
-		fprintf(f, " AC3 0x%04x", s->ac3_pid);
-	if (s->subtitling_pid)
-		fprintf(f, " SUB 0x%04x", s->subtitling_pid);
-	fprintf(f, "\n");
-}
-
-#endif
 
 static char sat_polarisation (struct transponder *t)
 {
@@ -2297,112 +2196,6 @@ static int sat_number (struct transponder *t)
 
 	return switch_pos;
 }
-
-#if 0
-static void dump_lists (void)
-{
-	struct list_head *p1, *p2;
-	struct transponder *t;
-	struct service *s;
-	int n = 0, i;
-	char sn[20];
-        int anon_services = 0;
-
-	list_for_each(p1, &scanned_transponders) {
-		t = list_entry(p1, struct transponder, list);
-		if (t->wrong_frequency)
-			continue;
-		list_for_each(p2, &t->services) {
-			n++;
-		}
-	}
-	info("dumping lists (%d services)\n", n);
-
-	list_for_each(p1, &scanned_transponders) {
-		t = list_entry(p1, struct transponder, list);
-		if (t->wrong_frequency)
-			continue;
-		list_for_each(p2, &t->services) {
-			s = list_entry(p2, struct service, list);
-
-			if (!s->service_name) {
-				/* not in SDT */
-				if (unique_anon_services)
-					snprintf(sn, sizeof(sn), "[%03x-%04x]",
-						 anon_services, s->service_id);
-				else
-					snprintf(sn, sizeof(sn), "[%04x]",
-						 s->service_id);
-				s->service_name = strdup(sn);
-				anon_services++;
-			}
-			/* ':' is field separator in szap and vdr service lists */
-			for (i = 0; s->service_name[i]; i++) {
-				if (s->service_name[i] == ':')
-					s->service_name[i] = ' ';
-			}
-			for (i = 0; s->provider_name && s->provider_name[i]; i++) {
-				if (s->provider_name[i] == ':')
-					s->provider_name[i] = ' ';
-			}
-			if (s->video_pid && !(serv_select & 1))
-				continue; /* no TV services */
-			if (!s->video_pid && s->audio_num && !(serv_select & 2))
-				continue; /* no radio services */
-			if (!s->video_pid && !s->audio_num && !(serv_select & 4))
-				continue; /* no data/other services */
-			if (s->scrambled && !ca_select)
-				continue; /* FTA only */
-			switch (output_format)
-			{
-			  case OUTPUT_PIDS:
-				pids_dump_service_parameter_set (stdout, s);
-				break;
-			  case OUTPUT_VDR:
-				vdr_dump_service_parameter_set (stdout,
-						    s->service_name,
-						    s->provider_name,
-						    t->type,
-						    &t->param,
-						    sat_polarisation(t),
-						    s->video_pid,
-						    s->pcr_pid,
-						    s->audio_pid,
-						    s->audio_lang,
-						    s->audio_num,
-						    s->teletext_pid,
-						    s->scrambled,
-						    //FIXME: s->subtitling_pid
-						    s->ac3_pid,
-						    s->service_id,
-						    t->original_network_id,
-						    s->transport_stream_id,
-						    t->orbital_pos,
-						    t->we_flag,
-						    vdr_dump_provider,
-						    ca_select,
-						    vdr_version,
-						    vdr_dump_channum,
-						    s->channel_num);
-				break;
-			  case OUTPUT_ZAP:
-				zap_dump_service_parameter_set (stdout,
-						    s->service_name,
-						    t->type,
-						    &t->param,
-						    sat_polarisation(t),
-						    sat_number(t),
-						    s->video_pid,
-						    s->audio_pid,
-						    s->service_id);
-			  default:
-				break;
-			  }
-		}
-	}
-	info("Done.\n");
-}
-#endif 
 
 static void show_existing_tuning_data_files(void)
 {
@@ -2432,36 +2225,18 @@ static const char *usage = "\n"
 	"	atsc/dvbscan doesn't do frequency scans, hence it needs initial\n"
 	"	tuning data for at least one transponder/channel.\n"
 	"	-c	scan on currently tuned transponder only\n"
-	"	-v 	verbose (repeat for more)\n"
-	"	-q 	quiet (repeat for less)\n"
 	"	-a N	use DVB /dev/dvb/adapterN/\n"
 	"	-f N	use DVB /dev/dvb/adapter?/frontendN\n"
 	"	-d N	use DVB /dev/dvb/adapter?/demuxN\n"
-//	"	-s N	use DiSEqC switch position N (DVB-S only)\n"
-	"	-i N	spectral inversion setting (0: off, 1: on, 2: auto [default])\n"
-	"	-n	evaluate NIT-other for full network scan (slow!)\n"
 	"	-5	multiply all filter timeouts by factor 5\n"
 	"		for non-DVB-compliant section repitition rates\n"
-	"	-o fmt	output format: 'zap' (default), 'vdr' or 'pids' (default with -c)\n"
-	"	-x N	Conditional Access, (default -1)\n"
-	"		N=0 gets only FTA channels\n"
-	"		N=-1 gets all channels\n"
-	"		N=xxx sets ca field in vdr output to :xxx:\n"
-	"	-t N	Service select, Combined bitfield parameter.\n"
-	"		1 = TV, 2 = Radio, 4 = Other, (default 7)\n"
-	"	-p	for vdr output format: dump provider name\n"
-	"	-e N	VDR version, default 3 for VDR-1.3.x and newer\n"
-	"		value 2 sets NIT and TID to zero\n"
-	"		Vdr version 1.3.x and up implies -p.\n"
-	"	-l lnb-type (DVB-S Only) (use -l help to print types) or \n"
-	"	-l low[,high[,switch]] in Mhz\n"
-//	"	-u      UK DVB-T Freeview channel numbering for VDR\n\n"
+	"	-u      UK DVB-T Freeview channel numbering for VDR\n\n"
 	"	-P do not use ATSC PSIP tables for scanning\n"
 	"	    (but only PAT and PMT) (applies for ATSC only)\n"
 	"	-A N	check for ATSC 1=Terrestrial [default], 2=Cable or 3=both\n"
-//	"	-U	Uniquely name unknown services\n"
-//	"	-C cs	Override default charset for service name/provider (default = ISO-6937)\n"
-//	"	-D cs	Output charset (default = %s)\n"
+	"   -s save scanned channel information to a file\n"
+	"	-l Antenna location (eg: Bedroom, living room, default: Living room)\n"
+	"	-v scan and play the video (Each channel for about 5-10 seconds)\n"
 	"Supported charsets by -C/-D parameters can be obtained via 'iconv -l' command\n";
 
 void
@@ -2526,7 +2301,7 @@ int main (int argc, char **argv)
 
 	/* start with default lnb type */
 	lnb_type = *lnb_enum(0);
-	while ((opt = getopt(argc, argv, "5cnpa:f:d:s:o:x:e:t:i:l:vquPA:UC:D:L:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:c:d:f:5:u:P:A:s:v:l:")) != -1) {
 		switch (opt) {
 		case 'a':
 			adapter = strtoul(optarg, NULL, 0);
@@ -2536,66 +2311,15 @@ int main (int argc, char **argv)
 			if (!output_format_set)
 				output_format = OUTPUT_PIDS;
 			break;
-#if 0
-		case 'n':
-			get_other_nits = 1;
-			break;
-#endif 
 		case 'd':
 			demux = strtoul(optarg, NULL, 0);
 			break;
 		case 'f':
 			frontend = strtoul(optarg, NULL, 0);
 			break;
-#if 0
-		case 'p':
-			vdr_dump_provider = 1;
-			break;
-		case 's':
-			switch_pos = strtoul(optarg, NULL, 0);
-			break;
-    	case 'o':
-            if      (strcmp(optarg, "zap") == 0) output_format = OUTPUT_ZAP;
-            else if (strcmp(optarg, "vdr") == 0) output_format = OUTPUT_VDR;
-            else if (strcmp(optarg, "pids") == 0) output_format = OUTPUT_PIDS;
-            else {
-				bad_usage(argv[0], 0);
-				return -1;
-			}
-			output_format_set = 1;
-			break;
-#endif
 		case '5':
 			long_timeout = 1;
 			break;
-#if 0
-		case 'x':
-			ca_select = strtoul(optarg, NULL, 0);
-			break;
-		case 'e':
-			vdr_version = strtoul(optarg, NULL, 0);
-			break;
-		case 't':
-			serv_select = strtoul(optarg, NULL, 0);
-			break;
-		case 'i':
-			spectral_inversion = strtoul(optarg, NULL, 0);
-			break;
-		case 'l':
-			if (lnb_decode(optarg, &lnb_type) < 0) {
-				bad_usage(argv[0], 1);
-				return -1;
-			}
-			break;
-
-		case 'v':
-			verbosity++;
-			break;
-		case 'q':
-			if (--verbosity < 0)
-				verbosity = 0;
-			break;
-#endif
 		case 'u':
 			vdr_dump_channum = 1;
 			break; 
@@ -2608,23 +2332,16 @@ int main (int argc, char **argv)
 				bad_usage(argv[0], 1);
 				return -1;
 			}
-
 			break;
-		case 'L':
+		case 's':
 			save_channel_info = 1;
 			break;
-#if 0
-		case 'U':
-			unique_anon_services = 1;
+		case 'v':
+			scan_play_video = 1;
 			break;
- 
-		case 'C':
-			default_charset = optarg;
-			break; 
-		case 'D':
-			output_charset = optarg;
+		case 'l':
+			strcpy(description, optarg);
 			break;
-#endif 
 		default:
 			bad_usage(argv[0], 0);
 			return -1;
@@ -2635,12 +2352,6 @@ int main (int argc, char **argv)
 	lnb_type.low_val *= 1000;	/* convert to kiloherz */
 	lnb_type.high_val *= 1000;	/* convert to kiloherz */
 	lnb_type.switch_val *= 1000;	/* convert to kiloherz */
-#if 0
-	if (switch_pos >= 4) {
-		fprintf (stderr, "switch position needs to be < 4!\n");
-		return -1;
-	}
-#endif 
 
 	info("scanning \n");
 
@@ -2695,18 +2406,19 @@ int main (int argc, char **argv)
 		list_del_init(&current_tp->list);
 		list_add_tail(&current_tp->list, &scanned_transponders);
 		current_tp->scan_done = 1;
-		//scan_tp ();
 		scan_tp_atsc();
 	}
 	else {
 		scan_network (frontend_fd);
 	}
 
-	//dump_lists();
-
 	if (save_channel_info) {
 		print_struct_buffers();
 		save_channel_info_file(chinfo_fd);
+	}
+
+	if (scan_play_video) {
+				
 	}
 
 	close (frontend_fd);
@@ -2739,7 +2451,7 @@ static void save_channel_info_file(FILE *fd)
 
 			++num_rf_chans; 
 
-			fprintf(fd, "%d\t%d\t%d\t%d\t%d\t",
+			fprintf(fd, "%d\t%d\t%d\t%d\t%f\t",
 			pchan_info[j].chan_num,
 			pchan_info[j].chan_freq,
 			pchan_info[j].lock_status,
@@ -2776,7 +2488,7 @@ static void print_struct_buffers(void)
 	
 	for (i = 0; i < 50; ++ i) {
 		
-		printf("%d %d %d %d %d %d %d %d\n" ,pchan_info[i].chan_num,
+		printf("%d %d %f %d %d %d %d %d\n" ,pchan_info[i].chan_num,
 		pchan_info[i].chan_freq,
 		pchan_info[i].snr_dB,
 		pchan_info[i].rssi_dBm,
